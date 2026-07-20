@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>loongTools - 开发者工具箱</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🐉</text></svg>">
+</head>
+<body>
+  <div class="layout">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-logo">
+        <h1>loong<span>Tools</span></h1>
+      </div>
+      <div class="sidebar-search">
+        <input type="text" id="tool-search" placeholder="🔍 搜索工具名称或能力..." oninput="filterTools()">
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-section">⚡ 高级工具</div>
+        <button class="nav-item" data-tool="stream" onclick="navigateTo('stream')">
+          <span class="icon">⛓️</span> Data Stream Pipeline
+        </button>
+        <button class="nav-item" data-tool="json-explorer" onclick="navigateTo('json-explorer')">
+          <span class="icon">🔍</span> JSON Explorer
+        </button>
+        <button class="nav-item" data-tool="list-compare" onclick="navigateTo('list-compare')">
+          <span class="icon">📊</span> 多列表比对
+        </button>
+
+        <div class="nav-section">🧰 文本处理(核心)</div>
+        <button class="nav-item" data-tool="col-select" onclick="navigateTo('col-select')">
+          <span class="icon">📐</span> 列选择模式
+        </button>
+        <button class="nav-item" data-tool="col-process" onclick="navigateTo('col-process')">
+          <span class="icon">⚙️</span> 列选择处理
+        </button>
+        <button class="nav-item" data-tool="string-wrap" onclick="navigateTo('string-wrap')">
+          <span class="icon">🎁</span> 包裹字符串
+        </button>
+        <button class="nav-item" data-tool="string-join" onclick="navigateTo('string-join')">
+          <span class="icon">🔗</span> 字符串连接
+        </button>
+        <button class="nav-item" data-tool="case-convert" onclick="navigateTo('case-convert')">
+          <span class="icon">🔤</span> 大小写转换
+        </button>
+        <button class="nav-item" data-tool="text-sort" onclick="navigateTo('text-sort')">
+          <span class="icon">📋</span> 排序/去重
+        </button>
+
+        <div class="nav-section">📊 CSV 工具</div>
+        <button class="nav-item" data-tool="csv-process" onclick="navigateTo('csv-process')">
+          <span class="icon">📊</span> CSV 处理
+        </button>
+
+        <div class="nav-section">📊 JSON 工具</div>
+        <button class="nav-item" data-tool="json" onclick="navigateTo('json')">
+          <span class="icon">{} </span> JSON 格式化
+        </button>
+        <button class="nav-item" data-tool="json-yaml" onclick="navigateTo('json-yaml')">
+          <span class="icon">🔄</span> JSON ↔ YAML
+        </button>
+
+        <div class="nav-section">🎨 冷门/新奇工具</div>
+        <button class="nav-item" data-tool="ascii-art" onclick="navigateTo('ascii-art')">
+          <span class="icon">🎨</span> ASCII Art
+        </button>
+        <button class="nav-item" data-tool="morse" onclick="navigateTo('morse')">
+          <span class="icon">📡</span> 莫尔斯电码
+        </button>
+        <button class="nav-item" data-tool="levenshtein" onclick="navigateTo('levenshtein')">
+          <span class="icon">📏</span> 编辑距离
+        </button>
+        <button class="nav-item" data-tool="password" onclick="navigateTo('password')">
+          <span class="icon">🔐</span> 密码检测/生成
+        </button>
+        <button class="nav-item" data-tool="base-convert" onclick="navigateTo('base-convert')">
+          <span class="icon">🔢</span> 进制转换
+        </button>
+        <button class="nav-item" data-tool="string-escape" onclick="navigateTo('string-escape')">
+          <span class="icon">↩️</span> 字符串转义
+        </button>
+        <button class="nav-item" data-tool="rot" onclick="navigateTo('rot')">
+          <span class="icon">🔄</span> ROT 加密
+        </button>
+        <button class="nav-item" data-tool="wordfreq" onclick="navigateTo('wordfreq')">
+          <span class="icon">📊</span> 字频统计
+        </button>
+        <button class="nav-item" data-tool="roman" onclick="navigateTo('roman')">
+          <span class="icon">🏛️</span> 罗马数字
+        </button>
+        <button class="nav-item" data-tool="text-repeat" onclick="navigateTo('text-repeat')">
+          <span class="icon">🔁</span> 文本重复/行号
+        </button>
+        <button class="nav-item" data-tool="css-units" onclick="navigateTo('css-units')">
+          <span class="icon">📐</span> CSS 单位换算
+        </button>
+        <button class="nav-item" data-tool="color-convert" onclick="navigateTo('color-convert')">
+          <span class="icon">🎨</span> 颜色转换
+        </button>
+        <button class="nav-item" data-tool="spring-boot-banner" onclick="navigateTo('spring-boot-banner')">
+          <span class="icon">🍃</span> Spring Boot Banner
+        </button>
+
+        <div class="nav-section">🔐 编码解码</div>
+        <button class="nav-item" data-tool="base64" onclick="navigateTo('base64')">
+          <span class="icon">🔏</span> Base64
+        </button>
+        <button class="nav-item" data-tool="url" onclick="navigateTo('url')">
+          <span class="icon">🔗</span> URL 编码
+        </button>
+        <button class="nav-item" data-tool="html" onclick="navigateTo('html')">
+          <span class="icon">🌐</span> HTML 编码
+        </button>
+
+        <div class="nav-section">🔒 安全 & 生成</div>
+        <button class="nav-item" data-tool="hash" onclick="navigateTo('hash')">
+          <span class="icon">🔑</span> 哈希计算
+        </button>
+        <button class="nav-item" data-tool="uuid" onclick="navigateTo('uuid')">
+          <span class="icon">🆔</span> UUID 生成
+        </button>
+        <button class="nav-item" data-tool="timestamp" onclick="navigateTo('timestamp')">
+          <span class="icon">⏰</span> 时间戳转换
+        </button>
+
+        <div class="nav-section">🔍 其他工具</div>
+        <button class="nav-item" data-tool="text-diff" onclick="navigateTo('text-diff')">
+          <span class="icon">📝</span> 文本对比
+        </button>
+        <button class="nav-item" data-tool="regex" onclick="navigateTo('regex')">
+          <span class="icon">🔬</span> 正则测试
+        </button>
+
+        <div class="nav-section">📦 实用工具</div>
+        <button class="nav-item" data-tool="sql-formatter" onclick="navigateTo('sql-formatter')">
+          <span class="icon">🗃️</span> SQL 格式化
+        </button>
+        <button class="nav-item" data-tool="mermaid" onclick="navigateTo('mermaid')">
+          <span class="icon">📊</span> Mermaid 图表
+        </button>
+        <button class="nav-item" data-tool="cron" onclick="navigateTo('cron')">
+          <span class="icon">⏰</span> Cron 解析
+        </button>
+        <button class="nav-item" data-tool="xml-formatter" onclick="navigateTo('xml-formatter')">
+          <span class="icon">📄</span> XML 格式化
+        </button>
+        <button class="nav-item" data-tool="ua-parser" onclick="navigateTo('ua-parser')">
+          <span class="icon">🌐</span> UA 解析
+        </button>
+        <button class="nav-item" data-tool="ascii-table" onclick="navigateTo('ascii-table')">
+          <span class="icon">📊</span> ASCII 表格
+        </button>
+        <button class="nav-item" data-tool="date-format" onclick="navigateTo('date-format')">
+          <span class="icon">⏱️</span> 日期格式转换
+        </button>
+
+        <div class="nav-section">🧩 冷门工具(续)</div>
+        <button class="nav-item" data-tool="http-codes" onclick="navigateTo('http-codes')">
+          <span class="icon">🌐</span> HTTP 状态码
+        </button>
+        <button class="nav-item" data-tool="ascii-codes" onclick="navigateTo('ascii-codes')">
+          <span class="icon">🔣</span> ASCII 码表
+        </button>
+        <button class="nav-item" data-tool="data-size" onclick="navigateTo('data-size')">
+          <span class="icon">💾</span> 数据大小换算
+        </button>
+        <button class="nav-item" data-tool="text-stats" onclick="navigateTo('text-stats')">
+          <span class="icon">📈</span> 文本统计
+        </button>
+        <button class="nav-item" data-tool="time-duration" onclick="navigateTo('time-duration')">
+          <span class="icon">⏳</span> 时间间隔换算
+        </button>
+        <button class="nav-item" data-tool="port-lookup" onclick="navigateTo('port-lookup')">
+          <span class="icon">🔌</span> 端口查询
+        </button>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main">
+      <header class="header">
+        <div>
+          <h2><span id="tool-header-name">列选择模式</span></h2>
+          <div id="tool-desc" class="tool-desc">按分隔符提取文本中的指定列</div>
+        </div>
+        <span class="header-desc">🔒 纯浏览器端处理，数据不上传</span>
+      </header>
+
+      <div class="tool-guide">
+        <div class="tool-guide-header" onclick="toggleGuide()">
+          <span class="tool-guide-title">📖 使用说明</span>
+          <span class="tool-guide-toggle" id="guide-toggle">▸</span>
+        </div>
+        <div class="tool-guide-body" id="guide-body">暂无使用说明</div>
+      </div>
+
+      <div class="content">
+        <!-- Tool Panels -->
+        <div class="tool-panel" id="panel-stream"></div>
+        <div class="tool-panel" id="panel-json-explorer"></div>
+        <div class="tool-panel" id="panel-list-compare"></div>
+
+        <div class="tool-panel" id="panel-col-select"></div>
+        <div class="tool-panel" id="panel-col-process"></div>
+        <div class="tool-panel" id="panel-string-wrap"></div>
+        <div class="tool-panel" id="panel-string-join"></div>
+        <div class="tool-panel" id="panel-case-convert"></div>
+        <div class="tool-panel" id="panel-text-sort"></div>
+        <div class="tool-panel" id="panel-csv-process"></div>
+        <div class="tool-panel" id="panel-text-diff"></div>
+        <div class="tool-panel" id="panel-regex"></div>
+
+        <div class="tool-panel" id="panel-json"></div>
+        <div class="tool-panel" id="panel-json-yaml"></div>
+
+        <div class="tool-panel" id="panel-base64"></div>
+        <div class="tool-panel" id="panel-url"></div>
+        <div class="tool-panel" id="panel-html"></div>
+
+        <div class="tool-panel" id="panel-hash"></div>
+        <div class="tool-panel" id="panel-uuid"></div>
+        <div class="tool-panel" id="panel-timestamp"></div>
+
+        <div class="tool-panel" id="panel-ascii-art"></div>
+        <div class="tool-panel" id="panel-morse"></div>
+        <div class="tool-panel" id="panel-levenshtein"></div>
+        <div class="tool-panel" id="panel-password"></div>
+        <div class="tool-panel" id="panel-base-convert"></div>
+        <div class="tool-panel" id="panel-string-escape"></div>
+        <div class="tool-panel" id="panel-rot"></div>
+        <div class="tool-panel" id="panel-wordfreq"></div>
+        <div class="tool-panel" id="panel-roman"></div>
+        <div class="tool-panel" id="panel-text-repeat"></div>
+        <div class="tool-panel" id="panel-css-units"></div>
+        <div class="tool-panel" id="panel-color-convert"></div>
+
+        <div class="tool-panel" id="panel-sql-formatter"></div>
+        <div class="tool-panel" id="panel-mermaid"></div>
+        <div class="tool-panel" id="panel-cron"></div>
+        <div class="tool-panel" id="panel-xml-formatter"></div>
+        <div class="tool-panel" id="panel-ua-parser"></div>
+        <div class="tool-panel" id="panel-ascii-table"></div>
+        <div class="tool-panel" id="panel-date-format"></div>
+
+        <div class="tool-panel" id="panel-http-codes"></div>
+        <div class="tool-panel" id="panel-ascii-codes"></div>
+        <div class="tool-panel" id="panel-data-size"></div>
+        <div class="tool-panel" id="panel-text-stats"></div>
+        <div class="tool-panel" id="panel-time-duration"></div>
+        <div class="tool-panel" id="panel-port-lookup"></div>
+        <div class="tool-panel" id="panel-spring-boot-banner"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/tools/stream-tools.js"></script>
+  <script src="js/tools/adv-tools.js"></script>
+  <script src="js/tools/text-tools.js"></script>
+  <script src="js/tools/csv-tools.js"></script>
+  <script src="js/tools/json-tools.js"></script>
+  <script src="js/tools/encode-tools.js"></script>
+  <script src="js/tools/more-tools.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
