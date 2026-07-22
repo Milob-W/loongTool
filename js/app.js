@@ -175,3 +175,12 @@ window.addEventListener('hashchange', () => {
   const hash = window.location.hash.slice(1) || 'col-select';
   navigateTo(hash);
 });
+
+// 全局快捷键：Ctrl+K / Cmd+K 聚焦搜索框
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    const searchBox = document.getElementById('tool-search');
+    if (searchBox) { searchBox.focus(); searchBox.select(); }
+  }
+});
