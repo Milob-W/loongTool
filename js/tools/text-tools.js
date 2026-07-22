@@ -4,6 +4,7 @@ const TextTools = {
     this.renderColumnProcess();
     this.renderStringWrap();
     this.renderStringJoin();
+    this.renderLineGroup();
     this.renderCaseConvert();
     this.renderTextDiff();
     this.renderTextSort();
@@ -620,6 +621,134 @@ const TextTools = {
 
     document.getElementById('sj-output').value = result.join('\n');
     this.updateLineCountStatic('sj-out-status', result);
+  },
+
+  /* ========== 4.5. Line Grouping ========== */
+  renderLineGroup() {
+    document.getElementById('panel-line-group').innerHTML = `
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">输入文本</div>
+          <div class="card-body">
+            <textarea id="lg-input" class="large" placeholder="每行一个项目，例如：&#10;张三&#10;李四&#10;王五&#10;赵六&#10;钱七&#10;孙八&#10;周九&#10;吴十&#10;郑十一"></textarea>
+            <div class="status-bar" id="lg-status">0 行</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">输出结果</div>
+          <div class="card-body relative">
+            <textarea id="lg-output" class="large" readonly placeholder="分组结果将显示在这里..."></textarea>
+            <div class="status-bar" id="lg-out-status">0 行</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">分组设置</div>
+        <div class="card-body">
+          <div class="grid-3">
+            <div class="form-row">
+              <label>每组行数</label>
+              <input type="number" id="lg-group-size" value="3" min="1" max="10000" style="width:100px">
+            </div>
+            <div class="form-row">
+              <label>组内连接方式</label>
+              <select id="lg-join-mode">
+                <option value="keep">保持原始行</option>
+                <option value="comma">逗号连接（,）</option>
+                <option value="space">空格连接</option>
+                <option value="tab">制表符连接（\\t）</option>
+                <option value="custom">自定义连接符</option>
+              </select>
+              <input type="text" id="lg-join-custom" placeholder="自定义连接符" style="display:none;width:120px">
+            </div>
+            <div class="form-row">
+              <label>组间分隔符</label>
+              <select id="lg-group-sep">
+                <option value="blank">空行分隔（\\n\\n）</option>
+                <option value="newline">换行分隔（\\n）</option>
+                <option value="custom">自定义分隔</option>
+              </select>
+              <input type="text" id="lg-group-sep-custom" placeholder="自定义分隔符" style="display:none;width:120px">
+            </div>
+          </div>
+          <div class="option-group mt-2">
+            <label><input type="checkbox" id="lg-number-groups"> 添加组编号（Group N: ...）</label>
+            <label><input type="checkbox" id="lg-skip-empty"> 跳过空行</label>
+          </div>
+          <div class="btn-group mt-2">
+            <button class="btn btn-primary" onclick="TextTools.doLineGroup()">执行分组</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('lg-input').addEventListener('input', () => this.updateLineCount('lg-input', 'lg-status'));
+    document.getElementById('lg-join-mode').addEventListener('change', () => {
+      const sel = document.getElementById('lg-join-mode');
+      const custom = document.getElementById('lg-join-custom');
+      custom.style.display = sel.value === 'custom' ? 'inline-block' : 'none';
+    });
+    document.getElementById('lg-group-sep').addEventListener('change', () => {
+      const sel = document.getElementById('lg-group-sep');
+      const custom = document.getElementById('lg-group-sep-custom');
+      custom.style.display = sel.value === 'custom' ? 'inline-block' : 'none';
+    });
+  },
+
+  doLineGroup() {
+    const input = document.getElementById('lg-input').value;
+    const groupSize = parseInt(document.getElementById('lg-group-size').value) || 3;
+    const joinMode = document.getElementById('lg-join-mode').value;
+    const joinCustom = document.getElementById('lg-join-custom').value;
+    const groupSepMode = document.getElementById('lg-group-sep').value;
+    const groupSepCustom = document.getElementById('lg-group-sep-custom').value;
+    const numberGroups = document.getElementById('lg-number-groups').checked;
+    const skipEmpty = document.getElementById('lg-skip-empty').checked;
+
+    if (!input) return showToast('请先输入文本');
+    if (groupSize < 1) return showToast('每组行数至少为 1');
+
+    let lines = input.split('\n');
+    if (skipEmpty) lines = lines.filter(l => l.trim() !== '');
+
+    // 解析组内连接方式
+    let joinStr;
+    switch (joinMode) {
+      case 'keep': joinStr = null; break;
+      case 'comma': joinStr = ','; break;
+      case 'space': joinStr = ' '; break;
+      case 'tab': joinStr = '\t'; break;
+      case 'custom': joinStr = joinCustom || ','; break;
+      default: joinStr = null;
+    }
+
+    // 解析组间分隔符
+    let groupSep;
+    switch (groupSepMode) {
+      case 'blank': groupSep = '\n\n'; break;
+      case 'newline': groupSep = '\n'; break;
+      case 'custom': groupSep = groupSepCustom || '\n\n'; break;
+      default: groupSep = '\n\n';
+    }
+
+    // 分组处理
+    const groups = [];
+    for (let i = 0; i < lines.length; i += groupSize) {
+      const chunk = lines.slice(i, i + groupSize);
+      const groupContent = joinStr === null
+        ? chunk.join('\n')
+        : chunk.join(joinStr);
+
+      if (numberGroups) {
+        groups.push(`Group ${groups.length + 1}:${joinStr === null ? '\n' : ' '}${groupContent}`);
+      } else {
+        groups.push(groupContent);
+      }
+    }
+
+    const output = groups.join(groupSep);
+    document.getElementById('lg-output').value = output;
+    this.updateLineCountStatic('lg-out-status', output.split('\n'));
   },
 
   /* ========== 5. Case Convert ========== */
