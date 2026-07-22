@@ -68,6 +68,7 @@ const TextTools = {
             <div class="btn-group">
               <button class="btn btn-primary" onclick="TextTools.doColumnSelect()">提取列</button>
               <button class="btn" onclick="TextTools.previewTable()">预览表格</button>
+              <button class="btn" onclick="TextTools.flattenToLine()">📐 整理为一行</button>
             </div>
           </div>
         </div>
@@ -202,6 +203,16 @@ const TextTools = {
     }
     html += '</tbody></table>';
     body.innerHTML = html;
+  },
+
+  flattenToLine() {
+    const output = document.getElementById('cs-output');
+    const lines = output.value.split('\n').filter(l => l.trim());
+    if (!lines.length) return showToast('输出区无内容，请先提取列');
+    const sep = prompt('请输入分隔符（将多行连接为一行）：', ',') || ',';
+    output.value = lines.join(sep);
+    this.updateLineCountStatic('cs-out-status', [output.value]);
+    showToast(`已整理为一行，分隔符: "${sep}"`);
   },
 
   /* ========== 2. Column Process Mode ========== */
