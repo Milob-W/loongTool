@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>字符处理工作台 - loongTools</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🏭</text></svg>">
+  <style>
+    .wf-layout {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .wf-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.625rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .wf-header h1 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .wf-header span { color: var(--accent); }
+    .wf-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      padding: 1rem 1.5rem;
+      gap: 0.75rem;
+    }
+    .wf-data-card {
+      flex-shrink: 0;
+    }
+    .wf-data-card textarea {
+      min-height: 150px;
+    }
+    .wf-history {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+    .wf-history-empty {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+    .wf-step-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .wf-step-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0.75rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.75rem;
+    }
+    .wf-step-header .step-label {
+      font-weight: 600;
+      color: var(--accent);
+    }
+    .wf-step-header .step-time {
+      color: var(--text-muted);
+      font-size: 0.6875rem;
+    }
+    .wf-step-body {
+      padding: 0.5rem 0.75rem;
+    }
+    .wf-step-body pre {
+      margin: 0;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, monospace;
+      font-size: 0.75rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 150px;
+      overflow-y: auto;
+      color: var(--text-secondary);
+    }
+    .wf-step-body .param-info {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+    .wf-toolbar {
+      flex-shrink: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem 1rem;
+      box-shadow: var(--shadow);
+    }
+    .wf-toolbar-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 0.375rem;
+    }
+    .wf-toolbar-row:last-child {
+      margin-bottom: 0;
+    }
+    .wf-toolbar-sep {
+      width: 1px;
+      height: 24px;
+      background: var(--border);
+      margin: 0 0.25rem;
+    }
+    .wf-toolbar input[type="text"],
+    .wf-toolbar input[type="number"] {
+      width: 100px;
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+    }
+    .wf-toolbar select {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+    }
+    .wf-toolbar .btn {
+      padding: 0.3125rem 0.625rem;
+      font-size: 0.75rem;
+    }
+    .wf-toolbar label {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .wf-data-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn-undo {
+      background: var(--red-bg);
+      color: var(--red);
+      border-color: transparent;
+    }
+    .btn-undo:hover {
+      background: #f5d5d5;
+    }
+    .btn-undo:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    @media (max-width: 768px) {
+      .wf-body {
+        padding: 0.5rem;
+      }
+      .wf-toolbar {
+        padding: 0.5rem;
+      }
+      .wf-toolbar-row {
+        gap: 0.25rem;
+      }
+      .wf-toolbar input[type="text"],
+      .wf-toolbar input[type="number"] {
+        width: 60px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wf-layout">
+    <header class="wf-header">
+      <h1>🏭 字符处理<span>工作台</span></h1>
+      <span style="font-size:0.75rem;color:var(--text-muted)">🔒 纯浏览器端处理 | <a href="index.html" style="color:var(--accent)">← 工具箱</a></span>
+    </header>
+
+    <div class="wf-body">
+      <!-- 当前数据 -->
+      <div class="card wf-data-card">
+        <div class="card-header">
+          <div class="wf-data-bar" style="width:100%">
+            <span>📝 当前数据</span>
+            <span class="status-bar" id="wf-status" style="margin:0">0 行</span>
+          </div>
+        </div>
+        <div class="card-body">
+          <textarea id="wf-input" class="large" placeholder="在此粘贴或输入文本数据...&#10;每行一条数据，列间用 Tab 或自定义分隔符分隔"></textarea>
+          <div class="btn-group mt-2">
+            <button class="btn btn-sm" onclick="Waterfall.importData()">📥 导入数据开始处理</button>
+            <span class="hint" style="font-size:0.75rem">导入后下方按钮激活，每步操作会记录到历史</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 操作历史 -->
+      <div class="wf-history" id="wf-history">
+        <div class="wf-history-empty" id="wf-history-empty">
+          👆 导入数据后，使用下方工具按钮开始处理。每一步都会在此显示历史记录。
+        </div>
+      </div>
+
+      <!-- 操作工具栏 -->
+      <div class="wf-toolbar" id="wf-toolbar">
+        <div class="wf-toolbar-row">
+          <label>每组N=</label>
+          <input type="number" id="wf-param-group-size" value="2" min="1" max="10000" title="每组行数">
+          <label>行</label>
+          <button class="btn btn-sm btn-primary" onclick="Waterfall.doGroup()" id="btn-group" disabled>📦 分组</button>
+
+          <span class="wf-toolbar-sep"></span>
+
+          <label>分隔符</label>
+          <select id="wf-param-transpose-delim" title="转置分隔符">
+            <option value="\t" selected>Tab</option>
+            <option value=",">,</option>
+            <option value="|">|</option>
+            <option value=" ">空格</option>
+          </select>
+          <button class="btn btn-sm" onclick="Waterfall.doTranspose()" id="btn-transpose" disabled>🔄 行列转置</button>
+
+          <span class="wf-toolbar-sep"></span>
+
+          <label>前缀</label>
+          <input type="text" id="wf-param-prefix" value="" placeholder="如: '" title="添加前缀">
+          <button class="btn btn-sm" onclick="Waterfall.doPrefix()" id="btn-prefix" disabled>▶ 加前缀</button>
+
+          <span class="wf-toolbar-sep"></span>
+
+          <label>后缀</label>
+          <input type="text" id="wf-param-suffix" value="" placeholder="如: '" title="添加后缀">
+          <button class="btn btn-sm" onclick="Waterfall.doSuffix()" id="btn-suffix" disabled>▶ 加后缀</button>
+        </div>
+        <div class="wf-toolbar-row">
+          <label>连接符</label>
+          <select id="wf-param-join-sep" title="行连接符">
+            <option value=",">,</option>
+            <option value="\t">Tab</option>
+            <option value="|">|</option>
+            <option value=" ">空格</option>
+            <option value="custom">自定义</option>
+          </select>
+          <input type="text" id="wf-param-join-custom" value="" placeholder="自定义" style="display:none;width:80px">
+          <button class="btn btn-sm" onclick="Waterfall.doJoin()" id="btn-join" disabled>🔗 连接行</button>
+
+          <span class="wf-toolbar-sep"></span>
+
+          <button class="btn btn-sm" onclick="Waterfall.doSort()" id="btn-sort" disabled>🔤 排序</button>
+          <button class="btn btn-sm" onclick="Waterfall.doDedup()" id="btn-dedup" disabled>📋 去重</button>
+
+          <span class="wf-toolbar-sep"></span>
+
+          <label>查找</label>
+          <input type="text" id="wf-param-find" value="" placeholder="正则或文本" title="查找内容">
+          <label>替换</label>
+          <input type="text" id="wf-param-replace" value="" placeholder="替换为" title="替换为">
+          <button class="btn btn-sm" onclick="Waterfall.doReplace()" id="btn-replace" disabled>🔬 替换</button>
+
+          <span class="wf-toolbar-sep"></span>
+
+          <label>列分隔</label>
+          <select id="wf-param-col-delim" title="按列拆分时的分隔符">
+            <option value="\t" selected>Tab</option>
+            <option value=",">,</option>
+            <option value="|">|</option>
+            <option value=" ">空格</option>
+          </select>
+          <label>列号</label>
+          <input type="number" id="wf-param-col-idx" value="1" min="1" style="width:50px" title="提取第几列（从1开始）">
+          <button class="btn btn-sm" onclick="Waterfall.doExtractCol()" id="btn-extract-col" disabled>📐 提取列</button>
+
+          <span class="wf-toolbar-sep"></span>
+
+          <button class="btn btn-sm btn-undo" onclick="Waterfall.undo()" id="btn-undo" disabled>↩ 撤销</button>
+          <button class="btn btn-sm" onclick="Waterfall.clearAll()" id="btn-clear" style="color:var(--text-muted)">🗑 清空</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/waterfall.js"></script>
+</body>
+</html>
