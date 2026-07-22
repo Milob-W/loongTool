@@ -121,24 +121,37 @@ function toggleGuide() {
 function filterTools() {
   const q = document.getElementById('tool-search').value.trim().toLowerCase();
   const nav = document.querySelector('.sidebar-nav');
-  const children = nav.children;
+  const children = Array.from(nav.children);
 
-  for (let i = 0; i < children.length; i++) {
-    const el = children[i];
+  // 第一遍：过滤所有 nav-item
+  children.forEach(el => {
+    if (!el.classList.contains('nav-item')) return;
+    if (!q) { el.style.display = ''; return; }
+    const id = el.getAttribute('data-tool');
+    const t = tools[id];
+    const match = t && (t.name.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q));
+    el.style.display = match ? '' : 'none';
+  });
+
+  // 第二遍：根据 nav-item 可见性决定 nav-section 可见性
+  let currentSection = null;
+  children.forEach(el => {
     if (el.classList.contains('nav-section')) {
-      let hasVisible = false;
-      for (let j = i + 1; j < children.length; j++) {
-        if (children[j].classList.contains('nav-section')) break;
-        if (children[j].style.display !== 'none') { hasVisible = true; break; }
+      // 先关闭上一个 section（如果没有可见子项）
+      if (currentSection && !currentSection.hasVisible) {
+        currentSection.el.style.display = 'none';
       }
-      el.style.display = hasVisible ? '' : 'none';
-    } else if (el.classList.contains('nav-item')) {
-      if (!q) { el.style.display = ''; continue; }
-      const id = el.getAttribute('data-tool');
-      const t = tools[id];
-      const match = t && (t.name.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q));
-      el.style.display = match ? '' : 'none';
+      currentSection = { el: el, hasVisible: false };
+      el.style.display = '';
+    } else if (currentSection && el.classList.contains('nav-item')) {
+      if (el.style.display !== 'none') {
+        currentSection.hasVisible = true;
+      }
     }
+  });
+  // 处理最后一个 section
+  if (currentSection && !currentSection.hasVisible) {
+    currentSection.el.style.display = 'none';
   }
 }
 
