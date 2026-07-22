@@ -5,6 +5,7 @@ const TextTools = {
     this.renderStringWrap();
     this.renderStringJoin();
     this.renderLineGroup();
+    this.renderGroupTranspose();
     this.renderCaseConvert();
     this.renderTextDiff();
     this.renderTextSort();
@@ -44,6 +45,14 @@ const TextTools = {
               <label>选定列</label>
               <input type="text" id="cs-columns" value="1" placeholder="如: 1,2,3 或 1-3" style="width:200px">
               <span class="hint">列号从 1 开始, 如 "1,2" 或 "1-3"</span>
+            </div>
+            <div class="form-row">
+              <label>列前拼接</label>
+              <input type="text" id="cs-prefix" value="" placeholder="每个列值前添加的文本" style="width:200px">
+            </div>
+            <div class="form-row">
+              <label>列后拼接</label>
+              <input type="text" id="cs-suffix" value="" placeholder="每个列值后添加的文本" style="width:200px">
             </div>
             <div class="form-row">
               <label>输出分隔符</label>
@@ -140,6 +149,8 @@ const TextTools = {
     const delim = this.getDelimiter('cs-delimiter', 'cs-delimiter-custom');
     const outDelim = this.getDelimiter('cs-out-delimiter', 'cs-out-delimiter-custom');
     const cols = this.parseColumns(document.getElementById('cs-columns').value);
+    const prefix = document.getElementById('cs-prefix').value;
+    const suffix = document.getElementById('cs-suffix').value;
 
     if (!input.trim()) return showToast('请先输入文本');
     if (!cols.length) return showToast('请指定有效的列号');
@@ -147,7 +158,12 @@ const TextTools = {
     const lines = input.split('\n');
     const result = lines.map(line => {
       const cells = line.split(delim);
-      return cols.map(c => (cells[c - 1] || '')).join(outDelim);
+      return cols.map(c => {
+        const raw = cells[c - 1] || '';
+        // 向后兼容：无 prefix/suffix 时保持原有的 trim 行为
+        const val = (prefix || suffix) ? raw : raw.trim();
+        return prefix + val + suffix;
+      }).join(outDelim);
     });
 
     const output = document.getElementById('cs-output');
@@ -258,6 +274,11 @@ const TextTools = {
           <div class="card-body">
             <textarea id="cp-output" class="large" readonly placeholder="结果将显示在这里..."></textarea>
             <div class="status-bar" id="cp-out-status">0 行</div>
+            <details id="cp-duplicates-wrapper" style="display:none;margin-top:0.5rem">
+              <summary style="cursor:pointer;font-size:0.8125rem;color:var(--accent)">🔁 重复数据（<span id="cp-dup-count">0</span> 条）</summary>
+              <textarea id="cp-duplicates" class="large" readonly placeholder="被去重的行..." style="min-height:80px;margin-top:0.5rem"></textarea>
+              <div class="status-bar" id="cp-dup-status">0 行</div>
+            </details>
           </div>
         </div>
       </div>
@@ -297,6 +318,12 @@ const TextTools = {
 
     if (!input.trim()) return showToast('请先输入文本');
 
+    // 非去重操作时隐藏重复数据显示区
+    const dupWrapper = document.getElementById('cp-duplicates-wrapper');
+    if (dupWrapper && op !== 'unique') {
+      dupWrapper.style.display = 'none';
+    }
+
     const processCell = (cell) => {
       switch (op) {
         case 'upper': return cell.toUpperCase();
@@ -332,16 +359,30 @@ const TextTools = {
       } else if (op === 'unique') {
         const seen = new Set();
         const uniq = [];
+        const dups = [];
         for (const row of rows) {
           const key = row[colIdx] || '';
           if (!seen.has(key)) {
             seen.add(key);
             uniq.push(row);
+          } else {
+            dups.push(row);
           }
         }
         result = uniq.map(r => r.join(delim)).join('\n');
         document.getElementById('cp-output').value = result;
         this.updateLineCountStatic('cp-out-status', result.split('\n'));
+        // 显示重复数据
+        const dupWrapper = document.getElementById('cp-duplicates-wrapper');
+        const dupTextarea = document.getElementById('cp-duplicates');
+        if (dups.length > 0) {
+          dupWrapper.style.display = '';
+          dupTextarea.value = dups.map(r => r.join(delim)).join('\n');
+          document.getElementById('cp-dup-count').textContent = dups.length;
+          this.updateLineCountStatic('cp-dup-status', dupTextarea.value.split('\n'));
+        } else {
+          dupWrapper.style.display = 'none';
+        }
         return;
       }
       result = rows.map(r => r.join(delim)).join('\n');
@@ -675,6 +716,18 @@ const TextTools = {
             <label><input type="checkbox" id="lg-number-groups"> 添加组编号（Group N: ...）</label>
             <label><input type="checkbox" id="lg-skip-empty"> 跳过空行</label>
           </div>
+          <div class="option-group mt-2">
+            <span class="hint" style="margin-right:0.5rem">行列转换:</span>
+            <label><input type="checkbox" id="lg-transpose-before"> 分组前先转置</label>
+            <label><input type="checkbox" id="lg-transpose-after"> 分组后转置每组</label>
+            <select id="lg-transpose-delim" style="width:80px;margin-left:0.5rem">
+              <option value="\t">制表符</option>
+              <option value=",">逗号</option>
+              <option value="|">竖线</option>
+              <option value=" ">空格</option>
+            </select>
+            <span class="hint" style="margin-left:0.25rem">转置分隔符</span>
+          </div>
           <div class="btn-group mt-2">
             <button class="btn btn-primary" onclick="TextTools.doLineGroup()">执行分组</button>
           </div>
@@ -695,6 +748,17 @@ const TextTools = {
     });
   },
 
+  // 行列转置辅助：将 lines 数组按行分隔符 split → 行列互换 → join 回 lines 数组
+  transposeLines(lines, delim) {
+    const matrix = lines.map(l => l.split(delim));
+    const maxCols = Math.max(...matrix.map(r => r.length), 0);
+    const result = [];
+    for (let col = 0; col < maxCols; col++) {
+      result.push(matrix.map(row => (row[col] || '').trim()).join(delim));
+    }
+    return result;
+  },
+
   doLineGroup() {
     const input = document.getElementById('lg-input').value;
     const groupSize = parseInt(document.getElementById('lg-group-size').value) || 3;
@@ -704,12 +768,20 @@ const TextTools = {
     const groupSepCustom = document.getElementById('lg-group-sep-custom').value;
     const numberGroups = document.getElementById('lg-number-groups').checked;
     const skipEmpty = document.getElementById('lg-skip-empty').checked;
+    const transposeBefore = document.getElementById('lg-transpose-before').checked;
+    const transposeAfter = document.getElementById('lg-transpose-after').checked;
+    const transposeDelim = document.getElementById('lg-transpose-delim').value;
 
     if (!input) return showToast('请先输入文本');
     if (groupSize < 1) return showToast('每组行数至少为 1');
 
     let lines = input.split('\n');
     if (skipEmpty) lines = lines.filter(l => l.trim() !== '');
+
+    // 分组前先转置（行列互换）
+    if (transposeBefore) {
+      lines = this.transposeLines(lines, transposeDelim);
+    }
 
     // 解析组内连接方式
     let joinStr;
@@ -735,9 +807,15 @@ const TextTools = {
     const groups = [];
     for (let i = 0; i < lines.length; i += groupSize) {
       const chunk = lines.slice(i, i + groupSize);
+
+      // 分组后转置每组
+      const chunkLines = transposeAfter
+        ? this.transposeLines(chunk, transposeDelim)
+        : chunk;
+
       const groupContent = joinStr === null
-        ? chunk.join('\n')
-        : chunk.join(joinStr);
+        ? chunkLines.join('\n')
+        : chunkLines.join(joinStr);
 
       if (numberGroups) {
         groups.push(`Group ${groups.length + 1}:${joinStr === null ? '\n' : ' '}${groupContent}`);
@@ -749,6 +827,181 @@ const TextTools = {
     const output = groups.join(groupSep);
     document.getElementById('lg-output').value = output;
     this.updateLineCountStatic('lg-out-status', output.split('\n'));
+  },
+
+  /* ========== Group Transpose ========== */
+  renderGroupTranspose() {
+    document.getElementById('panel-group-transpose').innerHTML = `
+      <div class="card">
+        <div class="card-header">输入数据</div>
+        <div class="card-body">
+          <textarea id="gt-input" class="large" placeholder="每行输入数据，列间用分隔符分隔&#10;例如（Tab 分隔）：&#10;1870220986754793472\t内部权限组&#10;1870263360910524416\t访客权限组&#10;1870322614270951424\t访客权限组&#10;1870322614279340032\t访客权限组"></textarea>
+          <div class="status-bar" id="gt-status">0 行</div>
+          <div class="btn-group mt-2">
+            <input type="file" id="gt-file" accept=".csv,.tsv,.txt" style="display:none" onchange="TextTools.loadGroupTransposeFile(event)">
+            <button class="btn btn-sm" onclick="document.getElementById('gt-file').click()">📂 上传文件</button>
+          </div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">转置设置</div>
+          <div class="card-body">
+            <div class="form-row">
+              <label>列分隔符</label>
+              <select id="gt-delimiter">
+                <option value=",">逗号 ,</option>
+                <option value="\t" selected>制表符 Tab</option>
+                <option value="|">竖线 |</option>
+                <option value=" ">空格</option>
+                <option value="custom">自定义</option>
+              </select>
+              <input type="text" id="gt-delimiter-custom" placeholder="自定义分隔符" style="display:none;width:120px">
+            </div>
+            <div class="form-row">
+              <label>每组行数</label>
+              <input type="number" id="gt-group-size" value="2" min="1" max="10000" style="width:100px">
+              <span class="hint">每 N 行为一组进行转置</span>
+            </div>
+            <div class="form-row">
+              <label>列间连接符</label>
+              <select id="gt-col-join">
+                <option value="\t">制表符 Tab</option>
+                <option value=",">逗号 ,</option>
+                <option value="|">竖线 |</option>
+                <option value=" ">空格</option>
+                <option value="custom">自定义</option>
+              </select>
+              <input type="text" id="gt-col-join-custom" placeholder="自定义" style="display:none;width:120px">
+              <span class="hint">同一列在不同行中的值如何连接</span>
+            </div>
+            <div class="form-row">
+              <label>组间分隔符</label>
+              <select id="gt-group-sep">
+                <option value="blank">空行分隔（\\n\\n）</option>
+                <option value="newline">换行分隔（\\n）</option>
+                <option value="custom">自定义分隔</option>
+              </select>
+              <input type="text" id="gt-group-sep-custom" placeholder="自定义" style="display:none;width:120px">
+            </div>
+            <div class="option-group mt-2">
+              <label><input type="checkbox" id="gt-skip-empty" checked> 跳过空行</label>
+              <label><input type="checkbox" id="gt-add-header"> 组间添加转置说明</label>
+            </div>
+            <button class="btn btn-primary mt-2" onclick="TextTools.doGroupTranspose()">执行转置</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">输出结果</div>
+          <div class="card-body relative">
+            <textarea id="gt-output" class="large" readonly placeholder="转置结果将显示在这里..."></textarea>
+            <div class="status-bar" id="gt-out-status">0 行</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('gt-input').addEventListener('input', () => this.updateLineCount('gt-input', 'gt-status'));
+    document.getElementById('gt-delimiter').addEventListener('change', () => {
+      const sel = document.getElementById('gt-delimiter');
+      const custom = document.getElementById('gt-delimiter-custom');
+      custom.style.display = sel.value === 'custom' ? 'inline-block' : 'none';
+    });
+    document.getElementById('gt-col-join').addEventListener('change', () => {
+      const sel = document.getElementById('gt-col-join');
+      const custom = document.getElementById('gt-col-join-custom');
+      custom.style.display = sel.value === 'custom' ? 'inline-block' : 'none';
+    });
+    document.getElementById('gt-group-sep').addEventListener('change', () => {
+      const sel = document.getElementById('gt-group-sep');
+      const custom = document.getElementById('gt-group-sep-custom');
+      custom.style.display = sel.value === 'custom' ? 'inline-block' : 'none';
+    });
+  },
+
+  loadGroupTransposeFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('gt-input').value = e.target.result;
+      this.updateLineCount('gt-input', 'gt-status');
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  },
+
+  doGroupTranspose() {
+    const input = document.getElementById('gt-input').value;
+    const delim = this.getDelimiter('gt-delimiter', 'gt-delimiter-custom');
+    const groupSize = parseInt(document.getElementById('gt-group-size').value) || 2;
+    const colJoinMode = document.getElementById('gt-col-join').value;
+    const colJoinCustom = document.getElementById('gt-col-join-custom').value;
+    const groupSepMode = document.getElementById('gt-group-sep').value;
+    const groupSepCustom = document.getElementById('gt-group-sep-custom').value;
+    const skipEmpty = document.getElementById('gt-skip-empty').checked;
+    const addHeader = document.getElementById('gt-add-header').checked;
+
+    if (!input.trim()) return showToast('请先输入数据');
+    if (groupSize < 1) return showToast('每组行数至少为 1');
+
+    let lines = input.split('\n');
+    if (skipEmpty) lines = lines.filter(l => l.trim());
+
+    // 扫描所有行获取最大列数
+    let maxCols = 0;
+    for (const line of lines) {
+      if (line.trim()) {
+        const len = line.split(delim).length;
+        if (len > maxCols) maxCols = len;
+      }
+    }
+
+    // 解析列间连接符
+    let colJoin;
+    switch (colJoinMode) {
+      case '\t': colJoin = '\t'; break;
+      case ',': colJoin = ','; break;
+      case '|': colJoin = '|'; break;
+      case ' ': colJoin = ' '; break;
+      case 'custom': colJoin = colJoinCustom || ','; break;
+      default: colJoin = '\t';
+    }
+
+    // 解析组间分隔符
+    let groupSep;
+    switch (groupSepMode) {
+      case 'blank': groupSep = '\n\n'; break;
+      case 'newline': groupSep = '\n'; break;
+      case 'custom': groupSep = groupSepCustom || '\n\n'; break;
+      default: groupSep = '\n\n';
+    }
+
+    // 分组转置处理
+    const groups = [];
+    for (let i = 0; i < lines.length; i += groupSize) {
+      const chunk = lines.slice(i, i + groupSize);
+      const rows = chunk.map(line => line.split(delim));
+
+      // 转置：每列收集组内所有行的值
+      const transposed = [];
+      for (let col = 0; col < maxCols; col++) {
+        const colValues = rows.map(row => (row[col] || '').trim());
+        transposed.push(colValues.join(colJoin));
+      }
+
+      if (addHeader) {
+        const groupNum = groups.length + 1;
+        const range = `${i + 1}-${Math.min(i + groupSize, lines.length)}`;
+        groups.push(`# 第 ${groupNum} 组 (行 ${range})`);
+      }
+
+      groups.push(transposed.join('\n'));
+    }
+
+    const output = groups.join(groupSep);
+    document.getElementById('gt-output').value = output;
+    this.updateLineCountStatic('gt-out-status', output.split('\n'));
   },
 
   /* ========== 5. Case Convert ========== */

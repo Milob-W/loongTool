@@ -10,6 +10,7 @@ const tools = {
   'string-wrap': { name: '包裹字符串', desc: '批量给文本添加前缀后缀，支持引号/括号/HTML标签等预设', usage: '输入多行文本 → 选择预设包裹（引号/括号/HTML 标签/XML 标签/Markdown）或自定义前缀后缀 → 点击"包裹"', module: TextTools, init: 'renderStringWrap' },
   'string-join': { name: '字符串连接', desc: '将多行文本用自定义分隔符合并，支持模板语法', usage: '输入多行文本 → 设置连接符（逗号/换行/自定义）→ 可使用 {1}{2} 模板语法引用各列 → 点击"连接"', module: TextTools, init: 'renderStringJoin' },
   'line-group': { name: '字符串分组', desc: '将多行文本按每组 N 行分组，支持多种组内连接和组间分隔方式', usage: '在输入框粘贴多行文本 → 设置每组行数（如 3）→ 选择组内连接方式（保持原始行/逗号/空格/制表符/自定义）→ 选择组间分隔符（空行/换行/自定义）→ 可选添加组编号或跳过空行 → 点击"执行分组"', module: TextTools, init: 'renderLineGroup' },
+  'group-transpose': { name: '数据分组转置', desc: '将表格数据按N行分组后列变行转置，每列收集组内所有行的值', usage: '输入表格数据（如 Tab 分隔）→ 选择分隔符 → 设置每组行数（N）→ 选择列间连接符（同一列在不同行中的值如何连接）→ 选择组间分隔符 → 点击"执行转置"', module: TextTools, init: 'renderGroupTranspose' },
   'case-convert': { name: '大小写转换', desc: '在 upper/lower/camel/pascal/snake/kebab 等命名风格间转换', usage: '输入文本 → 点击目标命名风格按钮 → 一键转换，结果自动选中方便复制', module: TextTools, init: 'renderCaseConvert' },
   'text-sort': { name: '排序/去重', desc: '对文本行进行排序、去重、打乱或反转', usage: '输入文本 → 点击排序/去重/打乱/反转按钮 → 可设置忽略大小写、排序方式（升序/降序）和数字排序', module: TextTools, init: 'renderTextSort' },
   'text-diff': { name: '文本对比', desc: '使用 LCS 算法对比两段文本的差异', usage: '在左右两个输入框分别粘贴文本 → 点击"对比"→ 差异部分用红绿色高亮显示（红色为删除、绿色为新增）', module: TextTools, init: 'renderTextDiff' },
