@@ -382,6 +382,12 @@ input:focus, select:focus {
   font-size: 0.75rem;
 }
 
+.btn-xs {
+  padding: 0.1875rem 0.5rem;
+  font-size: 0.6875rem;
+  border-radius: 3px;
+}
+
 .btn-group {
   display: flex;
   gap: 0.5rem;
