@@ -205,7 +205,7 @@ const StreamTools = {
   parseSource() {
     const type = document.getElementById('st-source-type').value;
     const text = document.getElementById('st-input').value;
-    if (!text.trim()) { this.showToast('请输入数据'); return; }
+    if (!text.trim()) { showToast('请输入数据'); return; }
 
     let items = [];
     let fields = [];
@@ -633,7 +633,7 @@ const StreamTools = {
   /* ========== Execute Pipeline ========== */
   runPipeline(previewOnly) {
     if (this.previewData.length === 0) {
-      this.showToast('请先在数据源步骤解析数据');
+      showToast('请先在数据源步骤解析数据');
       return;
     }
 
@@ -678,7 +678,7 @@ const StreamTools = {
 
       } catch (e) {
         this.log(`  ❌ 错误: ${e.message}`);
-        this.showToast(`步骤 ${i+1} 出错: ${e.message}`);
+        showToast(`步骤 ${i+1} 出错: ${e.message}`);
         break;
       }
     }
@@ -742,10 +742,4 @@ const StreamTools = {
     el.scrollTop = el.scrollHeight;
   },
 
-  showToast(msg) {
-    const toast = document.getElementById('toast');
-    toast.textContent = msg;
-    toast.classList.add('visible');
-    setTimeout(() => toast.classList.remove('visible'), 2000);
-  }
 };

@@ -53,7 +53,7 @@ const JsonTools = {
     try {
       return JSON.parse(input);
     } catch (e) {
-      this.showToast(`JSON 解析错误: ${e.message}`);
+      showToast(`JSON 解析错误: ${e.message}`);
       return null;
     }
   },
@@ -80,9 +80,9 @@ const JsonTools = {
     const input = document.getElementById('jf-input').value;
     try {
       JSON.parse(input);
-      this.showToast('✅ JSON 格式正确');
+      showToast('✅ JSON 格式正确');
     } catch (e) {
-      this.showToast(`❌ JSON 格式错误: ${e.message}`);
+      showToast(`❌ JSON 格式错误: ${e.message}`);
     }
   },
 
@@ -96,7 +96,7 @@ const JsonTools = {
     try {
       document.getElementById('jf-output').value = JSON.parse(input);
     } catch (e) {
-      this.showToast(`反转义失败: ${e.message}`);
+      showToast(`反转义失败: ${e.message}`);
     }
   },
 
@@ -106,7 +106,7 @@ const JsonTools = {
 
     let arr = Array.isArray(data) ? data : [data];
     if (!arr.length || typeof arr[0] !== 'object') {
-      return this.showToast('JSON 必须是一个对象数组才能转换为 CSV');
+      return showToast('JSON 必须是一个对象数组才能转换为 CSV');
     }
 
     const headers = [...new Set(arr.flatMap(Object.keys))];
@@ -161,7 +161,7 @@ const JsonTools = {
       const yaml = this.toYaml(obj);
       document.getElementById('jy-output').value = yaml;
     } catch (e) {
-      this.showToast(`JSON 解析错误: ${e.message}`);
+      showToast(`JSON 解析错误: ${e.message}`);
     }
   },
 
@@ -171,7 +171,7 @@ const JsonTools = {
       const obj = this.fromYaml(input);
       document.getElementById('jy-output').value = JSON.stringify(obj, null, 2);
     } catch (e) {
-      this.showToast(`YAML 解析错误: ${e.message}`);
+      showToast(`YAML 解析错误: ${e.message}`);
     }
   },
 
@@ -271,10 +271,4 @@ const JsonTools = {
     return strVal;
   },
 
-  showToast(msg) {
-    const toast = document.getElementById('toast');
-    toast.textContent = msg;
-    toast.classList.add('visible');
-    setTimeout(() => toast.classList.remove('visible'), 2000);
-  }
 };

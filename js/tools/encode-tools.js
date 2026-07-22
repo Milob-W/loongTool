@@ -64,7 +64,7 @@ const EncodeTools = {
 
   doBase64(mode) {
     const input = document.getElementById('b64-input').value;
-    if (!input) return this.showToast('请先输入文本');
+    if (!input) return showToast('请先输入文本');
 
     try {
       if (mode === 'encode') {
@@ -80,7 +80,7 @@ const EncodeTools = {
         }
       }
     } catch (e) {
-      this.showToast(`Base64 错误: ${e.message}`);
+      showToast(`Base64 错误: ${e.message}`);
     }
   },
 
@@ -118,7 +118,7 @@ const EncodeTools = {
 
   doUrl(mode) {
     const input = document.getElementById('url-input').value;
-    if (!input) return this.showToast('请先输入文本');
+    if (!input) return showToast('请先输入文本');
 
     try {
       switch (mode) {
@@ -145,7 +145,7 @@ const EncodeTools = {
           break;
       }
     } catch (e) {
-      this.showToast(`URL 处理错误: ${e.message}`);
+      showToast(`URL 处理错误: ${e.message}`);
     }
   },
 
@@ -181,7 +181,7 @@ const EncodeTools = {
 
   doHtml(mode) {
     const input = document.getElementById('html-input').value;
-    if (!input) return this.showToast('请先输入文本');
+    if (!input) return showToast('请先输入文本');
 
     switch (mode) {
       case 'encode': {
@@ -239,7 +239,7 @@ const EncodeTools = {
 
   async computeHash() {
     const input = document.getElementById('hash-input').value;
-    if (!input) return this.showToast('请先输入文本');
+    if (!input) return showToast('请先输入文本');
 
     const encoder = new TextEncoder();
     const data = encoder.encode(input);
@@ -406,10 +406,10 @@ const EncodeTools = {
 
   unixToDate() {
     const input = document.getElementById('ts-unix').value.trim();
-    if (!input) return this.showToast('请输入时间戳');
+    if (!input) return showToast('请输入时间戳');
 
     const ts = parseInt(input);
-    if (isNaN(ts)) return this.showToast('无效的时间戳');
+    if (isNaN(ts)) return showToast('无效的时间戳');
 
     const isMs = input.length > 10 || ts > 1e11;
     const date = new Date(isMs ? ts : ts * 1000);
@@ -422,7 +422,7 @@ const EncodeTools = {
 
   dateToUnix() {
     const val = document.getElementById('ts-datetime').value;
-    if (!val) return this.showToast('请选择日期时间');
+    if (!val) return showToast('请选择日期时间');
 
     const date = new Date(val);
     document.getElementById('ts-unix-result').innerHTML = `
@@ -440,14 +440,8 @@ const EncodeTools = {
   copyTimestamp(mode) {
     const val = mode === 'sec' ? Math.floor(Date.now()/1000).toString() : Date.now().toString();
     navigator.clipboard.writeText(val).then(() => {
-      this.showToast('已复制到剪贴板');
+      showToast('已复制到剪贴板');
     });
   },
 
-  showToast(msg) {
-    const toast = document.getElementById('toast');
-    toast.textContent = msg;
-    toast.classList.add('visible');
-    setTimeout(() => toast.classList.remove('visible'), 2000);
-  }
 };

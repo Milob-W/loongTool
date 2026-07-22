@@ -140,8 +140,8 @@ const TextTools = {
     const outDelim = this.getDelimiter('cs-out-delimiter', 'cs-out-delimiter-custom');
     const cols = this.parseColumns(document.getElementById('cs-columns').value);
 
-    if (!input.trim()) return this.showToast('请先输入文本');
-    if (!cols.length) return this.showToast('请指定有效的列号');
+    if (!input.trim()) return showToast('请先输入文本');
+    if (!cols.length) return showToast('请指定有效的列号');
 
     const lines = input.split('\n');
     const result = lines.map(line => {
@@ -158,7 +158,7 @@ const TextTools = {
     const input = document.getElementById('cs-input').value;
     const delim = this.getDelimiter('cs-delimiter', 'cs-delimiter-custom');
 
-    if (!input.trim()) return this.showToast('请先输入文本');
+    if (!input.trim()) return showToast('请先输入文本');
 
     const lines = input.split('\n').filter(l => l.trim());
     const container = document.getElementById('cs-table-preview');
@@ -294,7 +294,7 @@ const TextTools = {
     const colIdx = parseInt(document.getElementById('cp-column').value) - 1;
     const op = document.getElementById('cp-operation').value;
 
-    if (!input.trim()) return this.showToast('请先输入文本');
+    if (!input.trim()) return showToast('请先输入文本');
 
     const processCell = (cell) => {
       switch (op) {
@@ -464,7 +464,7 @@ const TextTools = {
     const newline = document.getElementById('sw-newline').value;
     const skipEmpty = document.getElementById('sw-skip-empty').checked;
 
-    if (!input.trim()) return this.showToast('请先输入文本');
+    if (!input.trim()) return showToast('请先输入文本');
 
     let lines = input.split('\n');
     if (skipEmpty) lines = lines.filter(l => l.trim());
@@ -587,8 +587,8 @@ const TextTools = {
     const joinStr = document.getElementById('sj-join-str').value;
     const skipEmpty = document.getElementById('sj-skip-empty').checked;
 
-    if (!input.trim()) return this.showToast('请先输入文本');
-    if (!cols.length) return this.showToast('请指定有效的列号');
+    if (!input.trim()) return showToast('请先输入文本');
+    if (!cols.length) return showToast('请指定有效的列号');
 
     let lines = input.split('\n');
     if (skipEmpty) lines = lines.filter(l => l.trim());
@@ -608,7 +608,7 @@ const TextTools = {
     const template = document.getElementById('sj-template').value;
     const skipEmpty = document.getElementById('sj-skip-empty').checked;
 
-    if (!input.trim()) return this.showToast('请先输入文本');
+    if (!input.trim()) return showToast('请先输入文本');
 
     let lines = input.split('\n');
     if (skipEmpty) lines = lines.filter(l => l.trim());
@@ -660,7 +660,7 @@ const TextTools = {
 
   caseConvert(mode) {
     const input = document.getElementById('cc-input').value;
-    if (!input) return this.showToast('请先输入文本');
+    if (!input) return showToast('请先输入文本');
 
     let result;
     switch (mode) {
@@ -826,7 +826,7 @@ const TextTools = {
 
   sortLines(mode) {
     const input = document.getElementById('ts-input').value;
-    if (!input.trim()) return this.showToast('请先输入文本');
+    if (!input.trim()) return showToast('请先输入文本');
 
     let lines = input.split('\n');
     let result;
@@ -917,7 +917,7 @@ const TextTools = {
   testRegex() {
     const pattern = document.getElementById('rx-pattern').value;
     const text = document.getElementById('rx-text').value;
-    if (!pattern) return this.showToast('请输入正则表达式');
+    if (!pattern) return showToast('请输入正则表达式');
 
     let flags = '';
     if (document.getElementById('rx-flag-g').checked) flags += 'g';
@@ -955,7 +955,7 @@ const TextTools = {
     const pattern = document.getElementById('rx-pattern').value;
     const text = document.getElementById('rx-text').value;
     const replace = document.getElementById('rx-replace').value;
-    if (!pattern) return this.showToast('请输入正则表达式');
+    if (!pattern) return showToast('请输入正则表达式');
 
     let flags = '';
     if (document.getElementById('rx-flag-g').checked) flags += 'g';
@@ -983,10 +983,4 @@ const TextTools = {
     document.getElementById(statusId).textContent = `${Array.isArray(lines) ? lines.length : text.split('\n').length} 行, ${text.length} 字符`;
   },
 
-  showToast(msg) {
-    const toast = document.getElementById('toast');
-    toast.textContent = msg;
-    toast.classList.add('visible');
-    setTimeout(() => toast.classList.remove('visible'), 2000);
-  }
 };

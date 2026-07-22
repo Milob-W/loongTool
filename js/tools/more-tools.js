@@ -47,7 +47,7 @@ const MoreTools = {
   doAsciiArt() {
     const text = document.getElementById('aa-input').value.toUpperCase();
     const font = document.getElementById('aa-font').value;
-    if (!text) return this.showToast('请输入文字');
+    if (!text) return showToast('请输入文字');
 
     const fonts = {
       block: {
@@ -179,7 +179,7 @@ const MoreTools = {
     };
 
     const glyphs = fonts[font];
-    if (!glyphs) return this.showToast('不支持的字体');
+    if (!glyphs) return showToast('不支持的字体');
 
     const height = glyphs['A'] ? glyphs['A'].length : 3;
     let result = '';
@@ -197,7 +197,7 @@ const MoreTools = {
 
   copyAsciiArt() {
     const text = document.getElementById('aa-output').textContent;
-    navigator.clipboard.writeText(text).then(() => this.showToast('已复制'));
+    navigator.clipboard.writeText(text).then(() => showToast('已复制'));
   },
 
   /* ========== 2. Morse Code ========== */
@@ -232,7 +232,7 @@ const MoreTools = {
 
   doMorse(mode) {
     const input = document.getElementById('mc-input').value.trim();
-    if (!input) return this.showToast('请输入内容');
+    if (!input) return showToast('请输入内容');
 
     const morseMap = {
       'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.',
@@ -286,7 +286,7 @@ const MoreTools = {
         }
       }
     } catch (e) {
-      this.showToast('浏览器不支持音频播放');
+      showToast('浏览器不支持音频播放');
     }
   },
 
@@ -514,7 +514,7 @@ const MoreTools = {
     if (digit) chars += '0123456789';
     if (symbol) chars += '!@#$%^&*()_+-=[]{}|;:,.<>?';
 
-    if (!chars) { this.showToast('至少选择一种字符类型'); return; }
+    if (!chars) { showToast('至少选择一种字符类型'); return; }
 
     const array = new Uint32Array(len);
     crypto.getRandomValues(array);
@@ -590,12 +590,12 @@ const MoreTools = {
     let toBase = parseInt(toRadio ? toRadio.value : '2');
     if (toBase === -1 || isNaN(toBase)) toBase = parseInt(document.getElementById('bc-to-custom').value) || 2;
 
-    if (!input) return this.showToast('请输入数值');
-    if (fromBase < 2 || fromBase > 36 || toBase < 2 || toBase > 36) return this.showToast('进制范围 2~36');
+    if (!input) return showToast('请输入数值');
+    if (fromBase < 2 || fromBase > 36 || toBase < 2 || toBase > 36) return showToast('进制范围 2~36');
 
     try {
       const dec = parseInt(input, fromBase);
-      if (isNaN(dec)) return this.showToast('无效的数值');
+      if (isNaN(dec)) return showToast('无效的数值');
 
       const result = dec.toString(toBase).toUpperCase();
       const digits = ['0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
@@ -621,13 +621,13 @@ const MoreTools = {
       document.getElementById('bc-all').innerHTML = allHtml;
 
     } catch (e) {
-      this.showToast(`转换错误: ${e.message}`);
+      showToast(`转换错误: ${e.message}`);
     }
   },
 
   copyAllBases() {
     const text = document.getElementById('bc-all').textContent;
-    navigator.clipboard.writeText(text).then(() => this.showToast('已复制'));
+    navigator.clipboard.writeText(text).then(() => showToast('已复制'));
   },
 
   /* ========== 6. String Escape ========== */
@@ -672,7 +672,7 @@ const MoreTools = {
 
   doStringEscape(mode) {
     const input = document.getElementById('se-input').value;
-    if (!input) return this.showToast('请输入文本');
+    if (!input) return showToast('请输入文本');
 
     let result;
     const escapeMap = {
@@ -753,7 +753,7 @@ const MoreTools = {
 
   doRot(mode) {
     const input = document.getElementById('rot-input').value;
-    if (!input) return this.showToast('请输入文本');
+    if (!input) return showToast('请输入文本');
 
     let result;
     const rot = (str, n) => str.replace(/[a-zA-Z]/g, c => {
@@ -834,7 +834,7 @@ const MoreTools = {
 
   doWordFreq() {
     const input = document.getElementById('wf-input').value;
-    if (!input) return this.showToast('请输入文本');
+    if (!input) return showToast('请输入文本');
 
     const chars = input.length;
     const charsNoSpace = input.replace(/\s/g, '').length;
@@ -951,7 +951,7 @@ const MoreTools = {
 
   arabicToRoman() {
     const num = parseInt(document.getElementById('rn-ato').value);
-    if (isNaN(num) || num < 1 || num > 3999) return this.showToast('请输入 1~3999 的整数');
+    if (isNaN(num) || num < 1 || num > 3999) return showToast('请输入 1~3999 的整数');
 
     const vals = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
     const strs = ['M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I'];
@@ -964,13 +964,13 @@ const MoreTools = {
 
   romanToArabic() {
     const input = document.getElementById('rn-rta').value.toUpperCase().trim();
-    if (!input) return this.showToast('请输入罗马数字');
+    if (!input) return showToast('请输入罗马数字');
 
     const map = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
     let result = 0, prev = 0;
     for (let i = input.length - 1; i >= 0; i--) {
       const curr = map[input[i]];
-      if (!curr) return this.showToast(`无效的罗马数字: ${input[i]}`);
+      if (!curr) return showToast(`无效的罗马数字: ${input[i]}`);
       if (curr < prev) result -= curr;
       else { result += curr; prev = curr; }
     }
@@ -1143,7 +1143,7 @@ const MoreTools = {
     const vw = parseInt(document.getElementById('cu-viewport').value) || 1920;
     const vh = parseInt(document.getElementById('cu-viewport-h').value) || 1080;
 
-    if (isNaN(val)) return this.showToast('请输入有效的数值');
+    if (isNaN(val)) return showToast('请输入有效的数值');
 
     const toPx = (v, unit) => {
       switch (unit) {
@@ -1371,10 +1371,4 @@ const MoreTools = {
     return closest.dist < 100 ? closest.name : 'Custom Color';
   },
 
-  showToast(msg) {
-    const toast = document.getElementById('toast');
-    toast.textContent = msg;
-    toast.classList.add('visible');
-    setTimeout(() => toast.classList.remove('visible'), 2000);
-  }
 };

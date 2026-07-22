@@ -70,11 +70,11 @@ const AdvTools = {
   /* build and render an interactive JSON tree */
   buildJsonTree() {
     const raw = document.getElementById('je-input').value.trim();
-    if (!raw) return this.showToast('请先输入 JSON');
+    if (!raw) return showToast('请先输入 JSON');
 
     let data;
     try { data = JSON.parse(raw); }
-    catch (e) { return this.showToast(`JSON 解析失败: ${e.message}`); }
+    catch (e) { return showToast(`JSON 解析失败: ${e.message}`); }
 
     const container = document.getElementById('je-tree');
     const status = document.getElementById('je-tree-status');
@@ -322,7 +322,7 @@ const AdvTools = {
     try {
       document.getElementById('je-input').value = JSON.stringify(JSON.parse(raw), null, 2);
     } catch (e) {
-      this.showToast(`JSON 格式错误: ${e.message}`);
+      showToast(`JSON 格式错误: ${e.message}`);
     }
     this.buildJsonTree();
   },
@@ -406,7 +406,7 @@ const AdvTools = {
 
   addList() {
     if (this._lcListCount >= 5) {
-      this.showToast('最多支持 5 个列表');
+      showToast('最多支持 5 个列表');
       return;
     }
     const card = document.getElementById(`lc-card-${this._lcListCount}`);
@@ -451,7 +451,7 @@ const AdvTools = {
     }
 
     if (lists.every(l => l.normalized.length === 0)) {
-      return this.showToast('请至少在一个列表中输入数据');
+      return showToast('请至少在一个列表中输入数据');
     }
 
     const container = document.getElementById('lc-result');
@@ -627,7 +627,7 @@ const AdvTools = {
 
   formatSql() {
     const input = document.getElementById('sql-input').value;
-    if (!input.trim()) return this.showToast('请先输入 SQL');
+    if (!input.trim()) return showToast('请先输入 SQL');
 
     const majorClauses = ['SELECT','FROM','WHERE','GROUP BY','ORDER BY','HAVING','LIMIT','OFFSET','INSERT INTO','VALUES','UPDATE','SET','DELETE FROM','DELETE','CREATE TABLE','ALTER TABLE','DROP TABLE','UNION ALL','UNION'];
     const joinClauses = ['LEFT JOIN','RIGHT JOIN','INNER JOIN','OUTER JOIN','LEFT OUTER JOIN','RIGHT OUTER JOIN','FULL OUTER JOIN','CROSS JOIN','JOIN','ON','USING'];
@@ -655,7 +655,7 @@ const AdvTools = {
 
   minifySql() {
     const input = document.getElementById('sql-input').value;
-    if (!input.trim()) return this.showToast('请先输入 SQL');
+    if (!input.trim()) return showToast('请先输入 SQL');
     document.getElementById('sql-output').value = input
       .replace(/--.*$/gm,'').replace(/\/\*[\s\S]*?\*\//g,'')
       .replace(/\s+/g,' ').replace(/\s*([(),;])\s*/g,'$1').trim();
@@ -663,8 +663,8 @@ const AdvTools = {
 
   copySqlOutput() {
     const val = document.getElementById('sql-output').value;
-    if (!val) return this.showToast('没有内容可复制');
-    navigator.clipboard.writeText(val).then(() => this.showToast('已复制'));
+    if (!val) return showToast('没有内容可复制');
+    navigator.clipboard.writeText(val).then(() => showToast('已复制'));
   },
 
   /* =================================================================
@@ -705,7 +705,7 @@ const AdvTools = {
 
   renderMermaidDiagram() {
     const text = document.getElementById('mermaid-input').value.trim();
-    if (!text) return this.showToast('请输入 Mermaid 语法');
+    if (!text) return showToast('请输入 Mermaid 语法');
     const container = document.getElementById('mermaid-preview');
     container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted)">⏳ 渲染中...</div>';
     if (typeof mermaid === 'undefined') {
@@ -734,13 +734,13 @@ const AdvTools = {
 
   copyMermaidCode() {
     const val = document.getElementById('mermaid-input').value;
-    if (!val.trim()) return this.showToast('没有内容可复制');
-    navigator.clipboard.writeText(val).then(() => this.showToast('已复制'));
+    if (!val.trim()) return showToast('没有内容可复制');
+    navigator.clipboard.writeText(val).then(() => showToast('已复制'));
   },
 
   exportMermaidSvg() {
     const svg = document.querySelector('#mermaid-preview svg');
-    if (!svg) return this.showToast('请先渲染图表');
+    if (!svg) return showToast('请先渲染图表');
     const str = new XMLSerializer().serializeToString(svg.cloneNode(true));
     const url = URL.createObjectURL(new Blob([str], {type:'image/svg+xml'}));
     const a = document.createElement('a'); a.href = url; a.download = 'diagram.svg'; a.click();
@@ -779,9 +779,9 @@ const AdvTools = {
 
   parseCronExp() {
     const expr = document.getElementById('cron-input').value.trim();
-    if (!expr) return this.showToast('请输入 cron 表达式');
+    if (!expr) return showToast('请输入 cron 表达式');
     const parts = expr.split(/\s+/);
-    if (parts.length !==5 && parts.length !==6) return this.showToast('需要 5 或 6 个字段');
+    if (parts.length !==5 && parts.length !==6) return showToast('需要 5 或 6 个字段');
 
     const fieldNames = ['分','时','日','月','周'];
     const fieldRanges = [[0,59],[0,23],[1,31],[1,12],[0,7]];
@@ -913,7 +913,7 @@ const AdvTools = {
 
   formatXml() {
     const xml = document.getElementById('xml-input').value.trim();
-    if (!xml) return this.showToast('请先输入 XML');
+    if (!xml) return showToast('请先输入 XML');
     try {
       const dom = new DOMParser().parseFromString(xml, 'text/xml');
       const errs = dom.querySelectorAll('parsererror');
@@ -944,22 +944,22 @@ const AdvTools = {
 
   minifyXml() {
     const xml = document.getElementById('xml-input').value.trim();
-    if (!xml) return this.showToast('请先输入 XML');
+    if (!xml) return showToast('请先输入 XML');
     document.getElementById('xml-output').value = xml.replace(/>\s+</g,'><').replace(/\s+/g,' ').trim();
     document.getElementById('xml-status').textContent = '';
   },
 
   validateXml() {
     const xml = document.getElementById('xml-input').value.trim();
-    if (!xml) return this.showToast('请先输入 XML');
+    if (!xml) return showToast('请先输入 XML');
     const errs = new DOMParser().parseFromString(xml, 'text/xml').querySelectorAll('parsererror');
     document.getElementById('xml-status').textContent = errs.length ? '⚠️ ' + errs[0].textContent.replace(/</g,'&lt;') : '✅ XML 有效';
   },
 
   copyXmlOutput() {
     const val = document.getElementById('xml-output').value;
-    if (!val) return this.showToast('没有内容可复制');
-    navigator.clipboard.writeText(val).then(() => this.showToast('已复制'));
+    if (!val) return showToast('没有内容可复制');
+    navigator.clipboard.writeText(val).then(() => showToast('已复制'));
   },
 
   /* =================================================================
@@ -994,7 +994,7 @@ const AdvTools = {
 
   parseUa() {
     const ua = document.getElementById('ua-input').value.trim();
-    if (!ua) return this.showToast('请输入 User-Agent');
+    if (!ua) return showToast('请输入 User-Agent');
     const r = this._analyzeUa(ua);
     let html = '<div style="font-family:monospace;font-size:0.75rem;word-break:break-all;margin-bottom:16px;padding:8px;background:var(--bg);border-radius:4px">' + ua.replace(/</g,'&lt;') + '</div>';
     [['🌐 浏览器', r.browser + ' ' + r.version], ['💻 操作系统', r.os + (r.osVersion?' '+r.osVersion:'')], ['📱 设备类型', r.device], ['⚙️ 渲染引擎', r.engine]].forEach(f => {
@@ -1075,14 +1075,14 @@ const AdvTools = {
 
   generateAsciiTable() {
     const input = document.getElementById('ascii-table-input').value;
-    if (!input.trim()) return this.showToast('请输入数据');
+    if (!input.trim()) return showToast('请输入数据');
     const delimMap = {tab:'\t', comma:',', pipe:'|', space:/\s+/, semicolon:';'};
     const delimType = document.getElementById('ascii-table-delimiter').value;
     const delim = delimMap[delimType];
     const hasHeader = document.getElementById('ascii-table-header').checked;
     const align = document.getElementById('ascii-table-align').value;
     const lines = input.split('\n').filter(l=>l.trim());
-    if (!lines.length) return this.showToast('没有有效数据');
+    if (!lines.length) return showToast('没有有效数据');
     const rows = lines.map(line => { const c = delimType==='space' ? line.trim().split(/\s+/) : line.split(delim).map(s=>s.trim()); return c; });
     const nc = Math.max(...rows.map(r=>r.length));
     const nr = rows.map(r => { while(r.length<nc) r.push(''); return r; });
@@ -1103,8 +1103,8 @@ const AdvTools = {
 
   copyAsciiTable() {
     const val = document.getElementById('ascii-table-output').value;
-    if (!val) return this.showToast('没有内容可复制');
-    navigator.clipboard.writeText(val).then(() => this.showToast('已复制'));
+    if (!val) return showToast('没有内容可复制');
+    navigator.clipboard.writeText(val).then(() => showToast('已复制'));
   },
 
   clearAsciiTable() {
@@ -1278,9 +1278,9 @@ const AdvTools = {
 
   convertDateFormat() {
     const input = document.getElementById('df-input').value.trim();
-    if (!input) return this.showToast('请输入日期时间');
+    if (!input) return showToast('请输入日期时间');
     const date = this._parseDateInput(input);
-    if (!date || isNaN(date.getTime())) return this.showToast('无法解析，请检查格式');
+    if (!date || isNaN(date.getTime())) return showToast('无法解析，请检查格式');
 
     const p2 = n => String(n).padStart(2,'0');
     const p3 = n => String(n).padStart(3,'0');
@@ -1326,21 +1326,21 @@ const AdvTools = {
   applyCustomFormat() {
     const input = document.getElementById('df-input').value.trim();
     const fmt = document.getElementById('df-custom-format').value.trim();
-    if (!input) return this.showToast('请先输入日期时间');
-    if (!fmt) return this.showToast('请输入格式模板');
+    if (!input) return showToast('请先输入日期时间');
+    if (!fmt) return showToast('请输入格式模板');
     const date = this._parseDateInput(input);
-    if (!date) return this.showToast('无法解析日期时间');
+    if (!date) return showToast('无法解析日期时间');
     document.getElementById('df-custom-result').textContent = this._formatDate(date, fmt);
   },
 
   copyCustomResult() {
     const el = document.getElementById('df-custom-result');
-    if (!el || !el.textContent) return this.showToast('没有内容可复制');
-    navigator.clipboard.writeText(el.textContent).then(() => this.showToast('已复制'));
+    if (!el || !el.textContent) return showToast('没有内容可复制');
+    navigator.clipboard.writeText(el.textContent).then(() => showToast('已复制'));
   },
 
   copyValue(val) {
-    navigator.clipboard.writeText(val).then(() => this.showToast('已复制'));
+    navigator.clipboard.writeText(val).then(() => showToast('已复制'));
   },
 
   /* =================================================================
@@ -1627,12 +1627,6 @@ const AdvTools = {
     });
   },
 
-  showToast(msg) {
-    const toast = document.getElementById('toast');
-    toast.textContent = msg;
-    toast.classList.add('visible');
-    setTimeout(() => toast.classList.remove('visible'), 2000);
-  },
 
   /* =================================================================
    * Spring Boot Banner 生成
@@ -1726,7 +1720,7 @@ const AdvTools = {
 
   _genSpringBanner() {
     const text = document.getElementById('sb-input').value.trim();
-    if (!text) return this.showToast('请输入文字');
+    if (!text) return showToast('请输入文字');
     const style = document.getElementById('sb-style').value;
     const fillChar = document.getElementById('sb-char').value || '#';
 
@@ -1770,19 +1764,19 @@ const AdvTools = {
   _copySpringBanner() {
     const pre = document.getElementById('sb-preview');
     if (!pre || !pre.textContent || pre.textContent.startsWith('点击')) {
-      return this.showToast('请先生成 Banner');
+      return showToast('请先生成 Banner');
     }
     navigator.clipboard.writeText(pre.textContent).then(() => {
-      this.showToast('已复制到剪贴板');
+      showToast('已复制到剪贴板');
     }).catch(() => {
-      this.showToast('复制失败，请手动选择复制');
+      showToast('复制失败，请手动选择复制');
     });
   },
 
   _downloadSpringBanner() {
     const pre = document.getElementById('sb-preview');
     if (!pre || !pre.textContent || pre.textContent.startsWith('点击')) {
-      return this.showToast('请先生成 Banner');
+      return showToast('请先生成 Banner');
     }
     const blob = new Blob([pre.textContent], { type: 'text/plain;charset=utf-8' });
     const a = document.createElement('a');
@@ -1790,6 +1784,6 @@ const AdvTools = {
     a.download = 'banner.txt';
     a.click();
     URL.revokeObjectURL(a.href);
-    this.showToast('已下载 banner.txt');
+    showToast('已下载 banner.txt');
   },
 };

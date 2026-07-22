@@ -161,6 +161,15 @@ function filterTools() {
   }
 }
 
+// 全局 Toast 提示（所有工具公用，避免各模块重复实现）
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.classList.add('visible');
+  setTimeout(() => toast.classList.remove('visible'), 2000);
+}
+
 document.addEventListener('DOMContentLoaded', initApp);
 window.addEventListener('hashchange', () => {
   const hash = window.location.hash.slice(1) || 'col-select';

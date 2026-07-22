@@ -415,7 +415,7 @@ const CsvTools = {
       this.historyIdx--;
       document.getElementById('csv-input').value = this.history[this.historyIdx];
       this.updateStatus();
-      this.showToast('已撤销');
+      showToast('已撤销');
     }
   },
 
@@ -424,7 +424,7 @@ const CsvTools = {
       this.historyIdx++;
       document.getElementById('csv-input').value = this.history[this.historyIdx];
       this.updateStatus();
-      this.showToast('已重做');
+      showToast('已重做');
     }
   },
 
@@ -577,11 +577,11 @@ const CsvTools = {
   /* ========== 主处理入口 ========== */
   process() {
     const input = document.getElementById('csv-input').value.trim();
-    if (!input) { this.showToast('请输入数据'); return; }
+    if (!input) { showToast('请输入数据'); return; }
     const d = this.getDelimiter();
     const hasHeader = document.getElementById('csv-has-header').checked;
     const { headers, data } = this.parseCsv(input, d, hasHeader);
-    if (data.length === 0) { this.showToast('无有效数据'); return; }
+    if (data.length === 0) { showToast('无有效数据'); return; }
     const type = document.getElementById('csv-process-type').value;
     let result = '';
     switch (type) {
@@ -839,7 +839,7 @@ const CsvTools = {
     const i = document.getElementById('csv-regex-ignore').checked;
     let flags = (g ? 'g' : '') + (m ? 'm' : '') + (i ? 'i' : '');
     let regex;
-    try { regex = new RegExp(pattern, flags); } catch (e) { this.showToast('正则表达式错误: ' + e.message); return ''; }
+    try { regex = new RegExp(pattern, flags); } catch (e) { showToast('正则表达式错误: ' + e.message); return ''; }
 
     const applyToCell = (cell) => {
       const re = new RegExp(pattern, flags);
@@ -1049,12 +1049,12 @@ const CsvTools = {
     const output = document.getElementById('csv-output');
     output.select();
     document.execCommand('copy');
-    this.showToast('已复制到剪贴板');
+    showToast('已复制到剪贴板');
   },
 
   downloadOutput() {
     const output = document.getElementById('csv-output').value;
-    if (!output) { this.showToast('无内容可下载'); return; }
+    if (!output) { showToast('无内容可下载'); return; }
     const type = document.getElementById('csv-process-type').value;
     const ext = { 'to-sql': 'sql', 'to-json': 'json', 'to-md': 'md' }[type] || 'csv';
     const mime = { 'to-json': 'application/json', 'to-md': 'text/markdown', 'to-sql': 'text/plain' }[type] || 'text/csv';
@@ -1067,10 +1067,4 @@ const CsvTools = {
     URL.revokeObjectURL(url);
   },
 
-  showToast(msg) {
-    const toast = document.getElementById('toast');
-    toast.textContent = msg;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 2000);
-  }
 };
