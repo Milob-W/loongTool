@@ -61,14 +61,7 @@ const tools = {
 };
 
 function initApp() {
-  const inited = new Set();
-  Object.values(tools).forEach(t => {
-    if (t.module && t.init && !inited.has(t.module)) {
-      inited.add(t.module);
-      t.module.init();
-    }
-  });
-
+  // 懒加载：不在启动时渲染所有面板，首次切换到工具时才按需渲染
   const hash = window.location.hash.slice(1) || 'col-select';
   navigateTo(hash);
 }
@@ -76,10 +69,23 @@ function initApp() {
 function navigateTo(toolId) {
   if (!tools[toolId]) return;
 
+  // 懒加载：面板首次激活时才调用 render 方法构建 DOM
+  const panel = document.getElementById(`panel-${toolId}`);
+  if (panel && panel.innerHTML.trim() === '') {
+    const t = tools[toolId];
+    try {
+      if (t.module && t.init && typeof t.module[t.init] === 'function') {
+        t.module[t.init]();
+      }
+    } catch (e) {
+      console.error(`工具 "${toolId}" 初始化失败:`, e);
+      panel.innerHTML = `<div class="empty-state">⚠️ 工具加载失败：${e.message}</div>`;
+    }
+  }
+
   document.querySelectorAll('.tool-panel').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
 
-  const panel = document.getElementById(`panel-${toolId}`);
   if (panel) panel.classList.add('active');
 
   const navItem = document.querySelector(`[data-tool="${toolId}"]`);
