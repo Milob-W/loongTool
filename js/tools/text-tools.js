@@ -24,6 +24,7 @@ const TextTools = {
             <input type="file" id="cs-file" accept=".csv,.tsv,.txt" style="display:none" onchange="TextTools.loadColumnSelectFile(event)">
             <button class="btn btn-sm" onclick="document.getElementById('cs-file').click()">📂 上传文件</button>
             <button class="btn btn-sm" onclick="TextTools.removeEmptyLines('cs-input', 'cs-status')">🗑️ 删除空行</button>
+            <button class="btn btn-sm" onclick="TextTools.clearInput('cs-input', 'cs-status')">❌ 清空</button>
           </div>
         </div>
       </div>
@@ -85,6 +86,8 @@ const TextTools = {
             <div class="status-bar" id="cs-out-status">0 行</div>
             <div class="btn-group mt-2">
               <button class="btn btn-sm" onclick="TextTools.addLineNumbers('cs-output', 'cs-out-status')">🔢 添加行号</button>
+              <button class="btn btn-sm" onclick="TextTools.copyToClipboard('cs-output')">📋 复制</button>
+              <button class="btn btn-sm" onclick="TextTools.exportToFile('cs-output', 'column-select.txt')">💾 导出</button>
             </div>
           </div>
         </div>
@@ -273,6 +276,7 @@ const TextTools = {
             <input type="file" id="cp-file" accept=".csv,.tsv,.txt" style="display:none" onchange="TextTools.loadColumnProcessFile(event)">
             <button class="btn btn-sm" onclick="document.getElementById('cp-file').click()">📂 上传文件</button>
             <button class="btn btn-sm" onclick="TextTools.removeEmptyLines('cp-input', 'cp-status')">🗑️ 删除空行</button>
+            <button class="btn btn-sm" onclick="TextTools.clearInput('cp-input', 'cp-status')">❌ 清空</button>
           </div>
         </div>
       </div>
@@ -334,6 +338,8 @@ const TextTools = {
             <div class="status-bar" id="cp-out-status">0 行</div>
             <div class="btn-group mt-2">
               <button class="btn btn-sm" onclick="TextTools.addLineNumbers('cp-output', 'cp-out-status')">🔢 添加行号</button>
+              <button class="btn btn-sm" onclick="TextTools.copyToClipboard('cp-output')">📋 复制</button>
+              <button class="btn btn-sm" onclick="TextTools.exportToFile('cp-output', 'column-process.txt')">💾 导出</button>
             </div>
             <details id="cp-duplicates-wrapper" style="display:none;margin-top:0.5rem">
               <summary style="cursor:pointer;font-size:0.8125rem;color:var(--accent)">🔁 重复数据（<span id="cp-dup-count">0</span> 条）</summary>
@@ -487,6 +493,7 @@ const TextTools = {
             <div class="status-bar" id="sw-status">0 行</div>
             <div class="btn-group mt-2">
               <button class="btn btn-sm" onclick="TextTools.removeEmptyLines('sw-input', 'sw-status')">🗑️ 删除空行</button>
+              <button class="btn btn-sm" onclick="TextTools.clearInput('sw-input', 'sw-status')">❌ 清空</button>
             </div>
           </div>
         </div>
@@ -497,6 +504,8 @@ const TextTools = {
             <div class="status-bar" id="sw-out-status">0 行</div>
             <div class="btn-group mt-2">
               <button class="btn btn-sm" onclick="TextTools.addLineNumbers('sw-output', 'sw-out-status')">🔢 添加行号</button>
+              <button class="btn btn-sm" onclick="TextTools.copyToClipboard('sw-output')">📋 复制</button>
+              <button class="btn btn-sm" onclick="TextTools.exportToFile('sw-output', 'string-wrap.txt')">💾 导出</button>
             </div>
           </div>
         </div>
@@ -602,6 +611,7 @@ const TextTools = {
             <div class="status-bar" id="sj-status">0 行</div>
             <div class="btn-group mt-2">
               <button class="btn btn-sm" onclick="TextTools.removeEmptyLines('sj-input', 'sj-status')">🗑️ 删除空行</button>
+              <button class="btn btn-sm" onclick="TextTools.clearInput('sj-input', 'sj-status')">❌ 清空</button>
             </div>
           </div>
         </div>
@@ -612,6 +622,8 @@ const TextTools = {
             <div class="status-bar" id="sj-out-status">0 行</div>
             <div class="btn-group mt-2">
               <button class="btn btn-sm" onclick="TextTools.addLineNumbers('sj-output', 'sj-out-status')">🔢 添加行号</button>
+              <button class="btn btn-sm" onclick="TextTools.copyToClipboard('sj-output')">📋 复制</button>
+              <button class="btn btn-sm" onclick="TextTools.exportToFile('sj-output', 'string-join.txt')">💾 导出</button>
             </div>
           </div>
         </div>
@@ -748,6 +760,7 @@ const TextTools = {
             <div class="status-bar" id="lg-status">0 行</div>
             <div class="btn-group mt-2">
               <button class="btn btn-sm" onclick="TextTools.removeEmptyLines('lg-input', 'lg-status')">🗑️ 删除空行</button>
+              <button class="btn btn-sm" onclick="TextTools.clearInput('lg-input', 'lg-status')">❌ 清空</button>
             </div>
           </div>
         </div>
@@ -758,6 +771,8 @@ const TextTools = {
             <div class="status-bar" id="lg-out-status">0 行</div>
             <div class="btn-group mt-2">
               <button class="btn btn-sm" onclick="TextTools.addLineNumbers('lg-output', 'lg-out-status')">🔢 添加行号</button>
+              <button class="btn btn-sm" onclick="TextTools.copyToClipboard('lg-output')">📋 复制</button>
+              <button class="btn btn-sm" onclick="TextTools.exportToFile('lg-output', 'line-group.txt')">💾 导出</button>
             </div>
           </div>
         </div>
@@ -920,6 +935,7 @@ const TextTools = {
               <input type="file" id="gt-file" accept=".csv,.tsv,.txt" style="display:none" onchange="TextTools.loadGroupTransposeFile(event)">
               <button class="btn btn-sm" onclick="document.getElementById('gt-file').click()">📂 上传文件</button>
               <button class="btn btn-sm" onclick="TextTools.removeEmptyLines('gt-input', 'gt-status')">🗑️ 删除空行</button>
+              <button class="btn btn-sm" onclick="TextTools.clearInput('gt-input', 'gt-status')">❌ 清空</button>
             </div>
           </div>
         </div>
@@ -978,6 +994,8 @@ const TextTools = {
             <div class="status-bar" id="gt-out-status">0 行</div>
             <div class="btn-group mt-2">
               <button class="btn btn-sm" onclick="TextTools.addLineNumbers('gt-output', 'gt-out-status')">🔢 添加行号</button>
+              <button class="btn btn-sm" onclick="TextTools.copyToClipboard('gt-output')">📋 复制</button>
+              <button class="btn btn-sm" onclick="TextTools.exportToFile('gt-output', 'group-transpose.txt')">💾 导出</button>
             </div>
           </div>
         </div>
@@ -1097,6 +1115,7 @@ const TextTools = {
             <textarea id="cc-input" class="large" placeholder="输入要转换的文本..."></textarea>
             <div class="btn-group mt-2">
               <button class="btn btn-sm" onclick="TextTools.removeEmptyLines('cc-input')">🗑️ 删除空行</button>
+              <button class="btn btn-sm" onclick="TextTools.clearInput('cc-input')">❌ 清空</button>
             </div>
           </div>
         </div>
@@ -1106,6 +1125,8 @@ const TextTools = {
             <textarea id="cc-output" class="large" readonly></textarea>
             <div class="btn-group mt-2">
               <button class="btn btn-sm" onclick="TextTools.addLineNumbers('cc-output')">🔢 添加行号</button>
+              <button class="btn btn-sm" onclick="TextTools.copyToClipboard('cc-output')">📋 复制</button>
+              <button class="btn btn-sm" onclick="TextTools.exportToFile('cc-output', 'case-convert.txt')">💾 导出</button>
             </div>
           </div>
         </div>
@@ -1266,6 +1287,7 @@ const TextTools = {
             <div class="status-bar" id="ts-status">0 行</div>
             <div class="btn-group mt-2">
               <button class="btn btn-sm" onclick="TextTools.removeEmptyLines('ts-input', 'ts-status')">🗑️ 删除空行</button>
+              <button class="btn btn-sm" onclick="TextTools.clearInput('ts-input', 'ts-status')">❌ 清空</button>
             </div>
           </div>
         </div>
@@ -1276,6 +1298,8 @@ const TextTools = {
             <div class="status-bar" id="ts-out-status">0 行</div>
             <div class="btn-group mt-2">
               <button class="btn btn-sm" onclick="TextTools.addLineNumbers('ts-output', 'ts-out-status')">🔢 添加行号</button>
+              <button class="btn btn-sm" onclick="TextTools.copyToClipboard('ts-output')">📋 复制</button>
+              <button class="btn btn-sm" onclick="TextTools.exportToFile('ts-output', 'text-sort.txt')">💾 导出</button>
             </div>
           </div>
         </div>
@@ -1446,6 +1470,46 @@ const TextTools = {
     } catch (e) {
       document.getElementById('rx-output').textContent = `替换错误: ${e.message}`;
     }
+  },
+
+  /* ========== 复制到剪贴板 ========== */
+  copyToClipboard(outputId) {
+    const textarea = document.getElementById(outputId);
+    if (!textarea.value.trim()) return showToast('无内容可复制');
+    
+    navigator.clipboard.writeText(textarea.value).then(() => {
+      showToast('已复制到剪贴板');
+    }).catch(() => {
+      // 降级方案
+      textarea.select();
+      document.execCommand('copy');
+      showToast('已复制到剪贴板');
+    });
+  },
+
+  /* ========== 清空输入 ========== */
+  clearInput(inputId, statusId) {
+    const textarea = document.getElementById(inputId);
+    textarea.value = '';
+    if (statusId) {
+      this.updateLineCount(inputId, statusId);
+    }
+    showToast('已清空输入');
+  },
+
+  /* ========== 导出文件 ========== */
+  exportToFile(outputId, filename) {
+    const textarea = document.getElementById(outputId);
+    if (!textarea.value.trim()) return showToast('无内容可导出');
+    
+    const blob = new Blob([textarea.value], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename || 'output.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('已导出文件');
   },
 
   /* ========== 删除空行 ========== */
