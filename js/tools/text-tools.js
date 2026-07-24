@@ -77,6 +77,9 @@ const TextTools = {
           <div class="card-body">
             <textarea id="cs-output" class="large" readonly placeholder="结果将显示在这里..."></textarea>
             <div class="status-bar" id="cs-out-status">0 行</div>
+            <div class="btn-group mt-2">
+              <button class="btn btn-sm" onclick="TextTools.addLineNumbers('cs-output', 'cs-out-status')">🔢 添加行号</button>
+            </div>
           </div>
         </div>
       </div>
@@ -285,6 +288,9 @@ const TextTools = {
           <div class="card-body">
             <textarea id="cp-output" class="large" readonly placeholder="结果将显示在这里..."></textarea>
             <div class="status-bar" id="cp-out-status">0 行</div>
+            <div class="btn-group mt-2">
+              <button class="btn btn-sm" onclick="TextTools.addLineNumbers('cp-output', 'cp-out-status')">🔢 添加行号</button>
+            </div>
             <details id="cp-duplicates-wrapper" style="display:none;margin-top:0.5rem">
               <summary style="cursor:pointer;font-size:0.8125rem;color:var(--accent)">🔁 重复数据（<span id="cp-dup-count">0</span> 条）</summary>
               <textarea id="cp-duplicates" class="large" readonly placeholder="被去重的行..." style="min-height:80px;margin-top:0.5rem"></textarea>
@@ -442,6 +448,9 @@ const TextTools = {
           <div class="card-body relative">
             <textarea id="sw-output" class="large" readonly placeholder="结果将显示在这里..."></textarea>
             <div class="status-bar" id="sw-out-status">0 行</div>
+            <div class="btn-group mt-2">
+              <button class="btn btn-sm" onclick="TextTools.addLineNumbers('sw-output', 'sw-out-status')">🔢 添加行号</button>
+            </div>
           </div>
         </div>
       </div>
@@ -551,6 +560,9 @@ const TextTools = {
           <div class="card-body relative">
             <textarea id="sj-output" class="large" readonly placeholder="结果将显示在这里..."></textarea>
             <div class="status-bar" id="sj-out-status">0 行</div>
+            <div class="btn-group mt-2">
+              <button class="btn btn-sm" onclick="TextTools.addLineNumbers('sj-output', 'sj-out-status')">🔢 添加行号</button>
+            </div>
           </div>
         </div>
       </div>
@@ -691,6 +703,9 @@ const TextTools = {
           <div class="card-body relative">
             <textarea id="lg-output" class="large" readonly placeholder="分组结果将显示在这里..."></textarea>
             <div class="status-bar" id="lg-out-status">0 行</div>
+            <div class="btn-group mt-2">
+              <button class="btn btn-sm" onclick="TextTools.addLineNumbers('lg-output', 'lg-out-status')">🔢 添加行号</button>
+            </div>
           </div>
         </div>
       </div>
@@ -907,6 +922,9 @@ const TextTools = {
           <div class="card-body relative">
             <textarea id="gt-output" class="large" readonly placeholder="转置结果将显示在这里..."></textarea>
             <div class="status-bar" id="gt-out-status">0 行</div>
+            <div class="btn-group mt-2">
+              <button class="btn btn-sm" onclick="TextTools.addLineNumbers('gt-output', 'gt-out-status')">🔢 添加行号</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1029,6 +1047,9 @@ const TextTools = {
           <div class="card-header">输出</div>
           <div class="card-body relative">
             <textarea id="cc-output" class="large" readonly></textarea>
+            <div class="btn-group mt-2">
+              <button class="btn btn-sm" onclick="TextTools.addLineNumbers('cc-output')">🔢 添加行号</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1193,6 +1214,9 @@ const TextTools = {
           <div class="card-body relative">
             <textarea id="ts-output" class="large" readonly></textarea>
             <div class="status-bar" id="ts-out-status">0 行</div>
+            <div class="btn-group mt-2">
+              <button class="btn btn-sm" onclick="TextTools.addLineNumbers('ts-output', 'ts-out-status')">🔢 添加行号</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1362,6 +1386,22 @@ const TextTools = {
     } catch (e) {
       document.getElementById('rx-output').textContent = `替换错误: ${e.message}`;
     }
+  },
+
+  /* ========== 行前添加序号 ========== */
+  addLineNumbers(outputId, statusId) {
+    const textarea = document.getElementById(outputId);
+    const text = textarea.value;
+    if (!text.trim()) return showToast('输出区无内容');
+    
+    const lines = text.split('\n');
+    const result = lines.map((line, i) => `${i + 1}. ${line}`).join('\n');
+    textarea.value = result;
+    
+    if (statusId) {
+      this.updateLineCountStatic(statusId, result.split('\n'));
+    }
+    showToast('已添加行号');
   },
 
   /* ========== Utility ========== */
