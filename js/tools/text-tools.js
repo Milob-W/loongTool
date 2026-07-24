@@ -23,6 +23,7 @@ const TextTools = {
           <div class="btn-group mt-2">
             <input type="file" id="cs-file" accept=".csv,.tsv,.txt" style="display:none" onchange="TextTools.loadColumnSelectFile(event)">
             <button class="btn btn-sm" onclick="document.getElementById('cs-file').click()">📂 上传文件</button>
+            <button class="btn btn-sm" onclick="TextTools.removeEmptyLines('cs-input', 'cs-status')">🗑️ 删除空行</button>
           </div>
         </div>
       </div>
@@ -65,6 +66,11 @@ const TextTools = {
               </select>
               <input type="text" id="cs-out-delimiter-custom" placeholder="自定义" style="display:none;width:120px">
             </div>
+            <div class="form-row" id="cs-align-row" style="display:none">
+              <label style="min-width:auto">按列对齐</label>
+              <input type="checkbox" id="cs-align">
+              <span class="hint">使用空格填充，使列宽度一致</span>
+            </div>
             <div class="btn-group">
               <button class="btn btn-primary" onclick="TextTools.doColumnSelect()">提取列</button>
               <button class="btn" onclick="TextTools.previewTable()">预览表格</button>
@@ -98,6 +104,7 @@ const TextTools = {
       const sel = document.getElementById('cs-out-delimiter');
       const custom = document.getElementById('cs-out-delimiter-custom');
       custom.style.display = sel.value === 'custom' ? 'inline-block' : 'none';
+      document.getElementById('cs-align-row').style.display = sel.value === '\t' ? 'flex' : 'none';
     });
     document.getElementById('cs-input').addEventListener('input', () => this.updateLineCount('cs-input', 'cs-status'));
   },
@@ -155,24 +162,60 @@ const TextTools = {
     const cols = this.parseColumns(document.getElementById('cs-columns').value);
     const prefix = document.getElementById('cs-prefix').value;
     const suffix = document.getElementById('cs-suffix').value;
+    const align = document.getElementById('cs-align').checked;
 
     if (!input.trim()) return showToast('请先输入文本');
     if (!cols.length) return showToast('请指定有效的列号');
 
     const lines = input.split('\n');
-    const result = lines.map(line => {
+    const rows = lines.map(line => {
       const cells = line.split(delim);
       return cols.map(c => {
         const raw = cells[c - 1] || '';
         // 向后兼容：无 prefix/suffix 时保持原有的 trim 行为
         const val = (prefix || suffix) ? raw : raw.trim();
         return prefix + val + suffix;
-      }).join(outDelim);
+      });
     });
+
+    let result;
+    if (align && outDelim === '\t') {
+      // 计算每列最大宽度
+      const colWidths = cols.map((_, colIdx) => {
+        return Math.max(...rows.map(row => this.getStringWidth(row[colIdx] || '')));
+      });
+      // 用空格填充对齐
+      result = rows.map(row => {
+        return row.map((val, colIdx) => {
+          const width = this.getStringWidth(val);
+          const padding = colWidths[colIdx] - width;
+          return val + ' '.repeat(Math.max(0, padding));
+        }).join('\t');
+      });
+    } else {
+      result = rows.map(row => row.join(outDelim));
+    }
 
     const output = document.getElementById('cs-output');
     output.value = result.join('\n');
     this.updateLineCountStatic('cs-out-status', result);
+  },
+
+  // 计算字符串显示宽度（中文等宽字符占2个宽度）
+  getStringWidth(str) {
+    let width = 0;
+    for (const char of str) {
+      const code = char.charCodeAt(0);
+      // 中文、全角字符占2个宽度
+      if (code >= 0x4e00 && code <= 0x9fff ||
+          code >= 0x3000 && code <= 0x303f ||
+          code >= 0xff00 && code <= 0xffef) {
+        width += 2;
+      } else {
+        width += 1;
+      }
+    }
+    return width;
   },
 
   previewTable() {
@@ -229,6 +272,7 @@ const TextTools = {
           <div class="btn-group mt-2">
             <input type="file" id="cp-file" accept=".csv,.tsv,.txt" style="display:none" onchange="TextTools.loadColumnProcessFile(event)">
             <button class="btn btn-sm" onclick="document.getElementById('cp-file').click()">📂 上传文件</button>
+            <button class="btn btn-sm" onclick="TextTools.removeEmptyLines('cp-input', 'cp-status')">🗑️ 删除空行</button>
           </div>
         </div>
       </div>
@@ -441,6 +485,9 @@ const TextTools = {
           <div class="card-body">
             <textarea id="sw-input" class="large" placeholder="每行输入一个字符串..."></textarea>
             <div class="status-bar" id="sw-status">0 行</div>
+            <div class="btn-group mt-2">
+              <button class="btn btn-sm" onclick="TextTools.removeEmptyLines('sw-input', 'sw-status')">🗑️ 删除空行</button>
+            </div>
           </div>
         </div>
         <div class="card">
@@ -553,6 +600,9 @@ const TextTools = {
           <div class="card-body">
             <textarea id="sj-input" class="large" placeholder="每行输入数据，列间用分隔符分隔&#10;例如：&#10;张三,30,北京&#10;李四,25,上海"></textarea>
             <div class="status-bar" id="sj-status">0 行</div>
+            <div class="btn-group mt-2">
+              <button class="btn btn-sm" onclick="TextTools.removeEmptyLines('sj-input', 'sj-status')">🗑️ 删除空行</button>
+            </div>
           </div>
         </div>
         <div class="card">
@@ -696,6 +746,9 @@ const TextTools = {
           <div class="card-body">
             <textarea id="lg-input" class="large" placeholder="每行一个项目，例如：&#10;张三&#10;李四&#10;王五&#10;赵六&#10;钱七&#10;孙八&#10;周九&#10;吴十&#10;郑十一"></textarea>
             <div class="status-bar" id="lg-status">0 行</div>
+            <div class="btn-group mt-2">
+              <button class="btn btn-sm" onclick="TextTools.removeEmptyLines('lg-input', 'lg-status')">🗑️ 删除空行</button>
+            </div>
           </div>
         </div>
         <div class="card">
@@ -858,17 +911,18 @@ const TextTools = {
   /* ========== Group Transpose ========== */
   renderGroupTranspose() {
     document.getElementById('panel-group-transpose').innerHTML = `
-      <div class="card">
-        <div class="card-header">输入数据</div>
-        <div class="card-body">
-          <textarea id="gt-input" class="large" placeholder="每行输入数据，列间用分隔符分隔&#10;例如（Tab 分隔）：&#10;1870220986754793472\t内部权限组&#10;1870263360910524416\t访客权限组&#10;1870322614270951424\t访客权限组&#10;1870322614279340032\t访客权限组"></textarea>
-          <div class="status-bar" id="gt-status">0 行</div>
-          <div class="btn-group mt-2">
-            <input type="file" id="gt-file" accept=".csv,.tsv,.txt" style="display:none" onchange="TextTools.loadGroupTransposeFile(event)">
-            <button class="btn btn-sm" onclick="document.getElementById('gt-file').click()">📂 上传文件</button>
+        <div class="card">
+          <div class="card-header">输入数据</div>
+          <div class="card-body">
+            <textarea id="gt-input" class="large" placeholder="每行输入数据，列间用分隔符分隔&#10;例如（Tab 分隔）：&#10;1870220986754793472\t内部权限组&#10;1870263360910524416\t访客权限组&#10;1870322614270951424\t访客权限组&#10;1870322614279340032\t访客权限组"></textarea>
+            <div class="status-bar" id="gt-status">0 行</div>
+            <div class="btn-group mt-2">
+              <input type="file" id="gt-file" accept=".csv,.tsv,.txt" style="display:none" onchange="TextTools.loadGroupTransposeFile(event)">
+              <button class="btn btn-sm" onclick="document.getElementById('gt-file').click()">📂 上传文件</button>
+              <button class="btn btn-sm" onclick="TextTools.removeEmptyLines('gt-input', 'gt-status')">🗑️ 删除空行</button>
+            </div>
           </div>
         </div>
-      </div>
       <div class="grid-2">
         <div class="card">
           <div class="card-header">转置设置</div>
@@ -1041,6 +1095,9 @@ const TextTools = {
           <div class="card-header">输入</div>
           <div class="card-body">
             <textarea id="cc-input" class="large" placeholder="输入要转换的文本..."></textarea>
+            <div class="btn-group mt-2">
+              <button class="btn btn-sm" onclick="TextTools.removeEmptyLines('cc-input')">🗑️ 删除空行</button>
+            </div>
           </div>
         </div>
         <div class="card">
@@ -1207,6 +1264,9 @@ const TextTools = {
           <div class="card-body">
             <textarea id="ts-input" class="large" placeholder="每行一个项目..."></textarea>
             <div class="status-bar" id="ts-status">0 行</div>
+            <div class="btn-group mt-2">
+              <button class="btn btn-sm" onclick="TextTools.removeEmptyLines('ts-input', 'ts-status')">🗑️ 删除空行</button>
+            </div>
           </div>
         </div>
         <div class="card">
@@ -1386,6 +1446,22 @@ const TextTools = {
     } catch (e) {
       document.getElementById('rx-output').textContent = `替换错误: ${e.message}`;
     }
+  },
+
+  /* ========== 删除空行 ========== */
+  removeEmptyLines(inputId, statusId) {
+    const textarea = document.getElementById(inputId);
+    const text = textarea.value;
+    if (!text.trim()) return showToast('输入区无内容');
+    
+    const lines = text.split('\n');
+    const result = lines.filter(l => l.trim()).join('\n');
+    textarea.value = result;
+    
+    if (statusId) {
+      this.updateLineCount(inputId, statusId);
+    }
+    showToast('已删除空行');
   },
 
   /* ========== 行前添加序号 ========== */
