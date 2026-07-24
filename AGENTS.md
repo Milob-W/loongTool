@@ -26,6 +26,7 @@ python3 -m http.server 8080
 ## 编码规范
 - **所有注释和说明使用中文**
 - **每次修改完必须 git commit 并 git push 到远程仓库**
+- **修改完成后需要刷新浏览器以加载最新代码**
 - 每个工具模块内独立实现 `showToast(msg)` 方法
 - CSS 使用 warm-ui 风格（`--accent: #d97757`），全局样式在 `css/style.css`
 - 工具 UI 使用 `.card` / `.grid-2` / `.form-row` / `.btn-group` 等组件类
