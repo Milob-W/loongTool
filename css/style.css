@@ -724,3 +724,124 @@ tr:hover {
 .preview-table tr:hover {
   background: var(--accent-bg);
 }
+
+/* ========== String Pipeline ========== */
+.sp-step {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 0.5rem;
+  background: var(--surface);
+  position: relative;
+}
+.sp-step::before {
+  content: '↓';
+  display: block;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  padding: 2px 0;
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.sp-step:first-child::before {
+  display: none;
+}
+.sp-step-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--sidebar-bg);
+  border-radius: var(--radius) var(--radius) 0 0;
+  cursor: default;
+}
+.sp-step-num {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 0.8125rem;
+  min-width: 1.5rem;
+}
+.sp-step-label {
+  flex: 1;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.sp-step-actions {
+  display: flex;
+  gap: 2px;
+}
+.sp-step-actions .btn-xs {
+  padding: 2px 6px;
+  font-size: 0.75rem;
+}
+.sp-step-actions .btn-xs[disabled] {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.sp-step-config {
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.8125rem;
+}
+.sp-step-config select,
+.sp-step-config input {
+  font-size: 0.8125rem;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.sp-step-preview {
+  border-top: 1px dashed var(--border);
+}
+.sp-step-preview-header {
+  padding: 4px 0.75rem;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+.sp-step-preview-header:hover {
+  color: var(--accent);
+}
+.sp-intermediate-item {
+  margin-bottom: 0.5rem;
+  border-left: 3px solid var(--accent);
+  padding-left: 0.5rem;
+}
+.sp-intermediate-header {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+  user-select: none;
+}
+.sp-intermediate-header:hover {
+  color: var(--accent);
+}
+.btn-xs {
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  cursor: pointer;
+}
+.btn-xs:hover {
+  background: var(--sidebar-bg);
+}
+.btn-xs.btn-danger {
+  color: var(--red);
+  border-color: var(--red);
+}
+.btn-xs.btn-danger:hover {
+  background: var(--red-bg);
+}

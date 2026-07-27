@@ -15,6 +15,7 @@ const tools = {
   'text-sort': { name: '排序/去重', desc: '对文本行进行排序、去重、打乱或反转', usage: '输入文本 → 点击排序/去重/打乱/反转按钮 → 可设置忽略大小写、排序方式（升序/降序）和数字排序', module: TextTools, init: 'renderTextSort' },
   'text-diff': { name: '文本对比', desc: '使用 LCS 算法对比两段文本的差异', usage: '在左右两个输入框分别粘贴文本 → 点击"对比"→ 差异部分用红绿色高亮显示（红色为删除、绿色为新增）', module: TextTools, init: 'renderTextDiff' },
   'regex': { name: '正则测试', desc: '测试正则表达式的匹配和替换效果，实时高亮结果', usage: '输入正则表达式 → 输入测试文本 → 实时查看匹配高亮 → 可在替换区域输入替换文本并执行替换（支持 $1 捕获组引用）', module: TextTools, init: 'renderRegexTester' },
+  'string-pipeline': { name: '字符串管道', desc: '将所有字符串操作汇聚成自上而下的处理管道，多步串联执行', usage: '输入文本 → 依次添加处理步骤（大小写转换/包裹/排序/去重/替换/过滤/编码/解码等）→ 点击"执行全部"→ 每步可展开查看中间结果，支持拖拽调整步骤顺序', module: StringPipeline, init: 'renderStringPipeline' },
 
   /* === JSON 工具 === */
   'json': { name: 'JSON 格式化', desc: '格式化/压缩/校验 JSON，支持导出为 CSV', usage: '粘贴 JSON 文本 → 点击"格式化"美化排版（2空格缩进）→ 点击"压缩"去除空白 → 点击"校验"检查语法 → 支持导出为 CSV 格式', module: JsonTools, init: 'renderJsonFormatter' },
