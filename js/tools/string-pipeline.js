@@ -139,6 +139,39 @@ const StringPipeline = {
               <optgroup label="👁️ 调试">
                 <option value="peek">Peek 窥视</option>
               </optgroup>
+              <optgroup label="🏛️ Commons/Spring StringUtils">
+                <option value="delete-whitespace">deleteWhitespace 删除所有空白</option>
+                <option value="trim-leading">trimLeadingWhitespace 去除开头空白</option>
+                <option value="trim-trailing">trimTrailingWhitespace 去除结尾空白</option>
+                <option value="strip-start">stripStart 去除开头指定字符</option>
+                <option value="strip-end">stripEnd 去除结尾指定字符</option>
+                <option value="replace-once">replaceOnce 只替换第一次</option>
+                <option value="replace-each">replaceEach 批量替换</option>
+                <option value="overlay">overlay 覆盖字符串</option>
+                <option value="rotate">rotate 循环移位</option>
+                <option value="reverse-delimited">reverseDelimited 按分隔符反转</option>
+                <option value="chomp">chomp 去除末尾换行</option>
+                <option value="chop">chop 去除末尾字符</option>
+                <option value="left">left 取左边N个字符</option>
+                <option value="right">right 取右边N个字符</option>
+                <option value="mid">mid 取中间N个字符</option>
+                <option value="substring-before">substringBefore 取分隔符前</option>
+                <option value="substring-after">substringAfter 取分隔符后</option>
+                <option value="substring-between">substringBetween 取分隔符之间</option>
+                <option value="unwrap">unwrap 去除包裹</option>
+                <option value="default-if-blank">defaultIfBlank 空值默认</option>
+                <option value="unqualify">unqualify 去限定名</option>
+                <option value="simple-match">simpleMatch 通配符匹配过滤</option>
+                <option value="contains-any">containsAny 包含任意字符</option>
+                <option value="contains-none">containsNone 不包含任意字符</option>
+                <option value="contains-only">containsOnly 只包含指定字符</option>
+                <option value="is-alpha">isAlpha 仅字母行</option>
+                <option value="is-numeric">isNumeric 仅数字行</option>
+                <option value="is-alphanumeric">isAlphanumeric 仅字母数字行</option>
+                <option value="is-all-lower">isAllLowerCase 全小写行</option>
+                <option value="is-all-upper">isAllUpperCase 全大写行</option>
+                <option value="ordinal-index-of">ordinalIndexOf 第N次出现位置</option>
+              </optgroup>
             </select>
             <button class="btn btn-primary" onclick="StringPipeline.addStep()">+ 添加步骤</button>
           </div>
@@ -339,6 +372,49 @@ const StringPipeline = {
         <span class="hint">基于 Web Crypto API</span>`,
       'column-select': `<input class="sp-cs-delim" placeholder="分隔符" value="," style="width:60px">
         <input class="sp-cs-cols" placeholder="列号" value="1" style="width:80px"><span class="hint">列号从1开始，如1,2或1-3</span>`,
+      /* ===== Commons / Spring StringUtils ===== */
+      'delete-whitespace': `<span class="hint">StringUtils.deleteWhitespace — 删除所有空白字符</span>`,
+      'trim-leading': `<span class="hint">StringUtils.trimLeadingWhitespace — 去除开头空白</span>`,
+      'trim-trailing': `<span class="hint">StringUtils.trimTrailingWhitespace — 去除结尾空白</span>`,
+      'strip-start': `<input class="sp-stripstart-char" placeholder="要去除的字符" value=" " style="width:80px"><span class="hint">StringUtils.stripStart — 去除开头所有指定字符</span>`,
+      'strip-end': `<input class="sp-stripend-char" placeholder="要去除的字符" value=" " style="width:80px"><span class="hint">StringUtils.stripEnd — 去除结尾所有指定字符</span>`,
+      'replace-once': `<input class="sp-ro-find" placeholder="查找" style="width:100px"><input class="sp-ro-to" placeholder="替换为" style="width:100px"><span class="hint">StringUtils.replaceOnce — 只替换第一次出现</span>`,
+      'replace-each': `<textarea class="sp-re-find" placeholder="查找列表&#10;每行一项" style="width:120px;height:40px;font-size:11px"></textarea>
+        <textarea class="sp-re-to" placeholder="替换列表&#10;每行一项" style="width:120px;height:40px;font-size:11px"></textarea>
+        <span class="hint">StringUtils.replaceEach — 批量替换，一一对应</span>`,
+      overlay: `<input class="sp-ov-str" placeholder="覆盖文本" style="width:100px">
+        <input class="sp-ov-start" type="number" placeholder="开始" value="0" style="width:60px">
+        <input class="sp-ov-end" type="number" placeholder="结束" value="0" style="width:60px">
+        <span class="hint">StringUtils.overlay — 用文本覆盖[start,end)部分</span>`,
+      rotate: `<input class="sp-rot-n" type="number" placeholder="偏移量(正右负左)" value="3" style="width:80px"><span class="hint">StringUtils.rotate — 字符循环移位</span>`,
+      'reverse-delimited': `<input class="sp-rd-sep" placeholder="分隔符" value="." style="width:60px"><span class="hint">StringUtils.reverseDelimited — 按分隔符反转元素</span>`,
+      chomp: `<span class="hint">StringUtils.chomp — 去除末尾换行符(\\n或\\r\\n)</span>`,
+      chop: `<span class="hint">StringUtils.chop — 去除末尾一个字符</span>`,
+      left: `<input class="sp-left-n" type="number" value="3" min="0" style="width:60px"><span class="hint">StringUtils.left — 取左边N个字符</span>`,
+      right: `<input class="sp-right-n" type="number" value="3" min="0" style="width:60px"><span class="hint">StringUtils.right — 取右边N个字符</span>`,
+      mid: `<input class="sp-mid-pos" type="number" placeholder="起始位置" value="0" style="width:70px">
+        <input class="sp-mid-len" type="number" placeholder="长度" value="3" style="width:60px">
+        <span class="hint">StringUtils.mid — 从指定位置取N个字符</span>`,
+      'substring-before': `<input class="sp-sb-sep" placeholder="分隔符" value="@" style="width:80px"><span class="hint">StringUtils.substringBefore — 取分隔符前的部分</span>`,
+      'substring-after': `<input class="sp-sa-sep" placeholder="分隔符" value="@" style="width:80px"><span class="hint">StringUtils.substringAfter — 取分隔符后的部分</span>`,
+      'substring-between': `<input class="sp-sb-open" placeholder="开始标记" value="[" style="width:60px">
+        <input class="sp-sb-close" placeholder="结束标记" value="]" style="width:60px">
+        <span class="hint">StringUtils.substringBetween — 取两标记之间的部分</span>`,
+      unwrap: `<input class="sp-unwrap-c" placeholder="包裹字符" value="\"" style="width:60px"><span class="hint">StringUtils.unwrap — 去除首尾指定字符包裹</span>`,
+      'default-if-blank': `<input class="sp-dib-def" placeholder="默认值" style="width:120px"><span class="hint">StringUtils.defaultIfBlank — 空白行替换为默认值</span>`,
+      unqualify: `<input class="sp-unqual-sep" placeholder="分隔符" value="." style="width:60px"><span class="hint">Spring StringUtils.unqualify — 取最后分隔符后的部分</span>`,
+      'simple-match': `<input class="sp-sm-pat" placeholder="通配符" value="*.txt" style="width:120px"><span class="hint">Spring simpleMatch — 通配符匹配过滤(*任意)</span>`,
+      'contains-any': `<input class="sp-cany-chars" placeholder="字符集合" style="width:120px"><span class="hint">StringUtils.containsAny — 行包含任意指定字符则保留</span>`,
+      'contains-none': `<input class="sp-cnone-chars" placeholder="字符集合" style="width:120px"><span class="hint">StringUtils.containsNone — 行不包含任意指定字符则保留</span>`,
+      'contains-only': `<input class="sp-conly-chars" placeholder="允许的字符集" style="width:120px"><span class="hint">StringUtils.containsOnly — 行只包含指定字符则保留</span>`,
+      'is-alpha': `<span class="hint">StringUtils.isAlpha — 仅保留全字母行</span>`,
+      'is-numeric': `<span class="hint">StringUtils.isNumeric — 仅保留全数字行</span>`,
+      'is-alphanumeric': `<span class="hint">StringUtils.isAlphanumeric — 仅保留字母数字行</span>`,
+      'is-all-lower': `<span class="hint">StringUtils.isAllLowerCase — 仅保留全小写行</span>`,
+      'is-all-upper': `<span class="hint">StringUtils.isAllUpperCase — 仅保留全大写行</span>`,
+      'ordinal-index-of': `<input class="sp-oi-sub" placeholder="子串" style="width:80px">
+        <input class="sp-oi-n" type="number" placeholder="第N次" value="2" min="1" style="width:60px">
+        <span class="hint">StringUtils.ordinalIndexOf — 第N次出现的位置，输出: "行内容 | N"</span>`,
     };
     return cfg[type] || '';
   },
@@ -383,7 +459,29 @@ const StringPipeline = {
       'decode-hex':'Hex解码', escape:'↩️ 转义', unescape:'↩️ 反转义',
       'json-escape':'📋 JSON转义', 'json-unescape':'📋 JSON反转义',
       'unicode-escape':'🌍 Unicode转义', rot13:'🔄 ROT13',
-      hash:'🔑 哈希计算', 'column-select':'📐 列提取'
+      hash:'🔑 哈希计算', 'column-select':'📐 列提取',
+      /* Commons / Spring StringUtils */
+      'delete-whitespace':'deleteWhitespace 删除所有空白',
+      'trim-leading':'trimLeadingWhitespace 去除开头空白',
+      'trim-trailing':'trimTrailingWhitespace 去除结尾空白',
+      'strip-start':'stripStart 去除开头字符', 'strip-end':'stripEnd 去除结尾字符',
+      'replace-once':'replaceOnce 只替换第一次', 'replace-each':'replaceEach 批量替换',
+      overlay:'overlay 覆盖', rotate:'rotate 循环移位',
+      'reverse-delimited':'reverseDelimited 按分隔符反转',
+      chomp:'chomp 去末尾换行', chop:'chop 去末尾字符',
+      left:'left 左N字符', right:'right 右N字符', mid:'mid 中间N字符',
+      'substring-before':'substringBefore 取分隔符前',
+      'substring-after':'substringAfter 取分隔符后',
+      'substring-between':'substringBetween 取分隔符之间',
+      unwrap:'unwrap 去除包裹', 'default-if-blank':'defaultIfBlank 空值默认',
+      unqualify:'unqualify 去限定名', 'simple-match':'simpleMatch 通配符过滤',
+      'contains-any':'containsAny 包含任意字符',
+      'contains-none':'containsNone 不包含任意字符',
+      'contains-only':'containsOnly 只包含指定字符',
+      'is-alpha':'isAlpha 仅字母', 'is-numeric':'isNumeric 仅数字',
+      'is-alphanumeric':'isAlphanumeric 仅字母数字',
+      'is-all-lower':'isAllLowerCase 全小写', 'is-all-upper':'isAllUpperCase 全大写',
+      'ordinal-index-of':'ordinalIndexOf 第N次位置'
     };
     return m[type] || type;
   },
@@ -534,6 +632,38 @@ const StringPipeline = {
       case 'rot13': return data.replace(/[a-zA-Z]/g,c=>{const base=c.charCodeAt(0)>=97?97:65;return String.fromCharCode((c.charCodeAt(0)-base+13)%26+base);});
       case 'hash': { const algo=$('.sp-hash-algo')?.value||'md5';return StringPipelineUtils.hash(data,algo); }
       case 'column-select': { const d=$('.sp-cs-delim')?.value||',',c=$('.sp-cs-cols')?.value||'1';const cols=StringPipelineUtils.parseColumns(c);return data.split('\n').map(l=>{const cells=l.split(d);return cols.map(c=>(cells[c-1]||'')).join(d);}).join('\n'); }
+      /* ===== Commons / Spring StringUtils ===== */
+      case 'delete-whitespace': return data.replace(/\s+/g,'');
+      case 'trim-leading': return data.split('\n').map(l=>l.replace(/^\s+/,'')).join('\n');
+      case 'trim-trailing': return data.split('\n').map(l=>l.replace(/\s+$/,'')).join('\n');
+      case 'strip-start': { const c=$('.sp-stripstart-char')?.value||' ';const re=new RegExp(`^[${StringPipelineUtils.escapeRegex(c)}]+`);return data.split('\n').map(l=>l.replace(re,'')).join('\n'); }
+      case 'strip-end': { const c=$('.sp-stripend-char')?.value||' ';const re=new RegExp(`[${StringPipelineUtils.escapeRegex(c)}]+$`);return data.split('\n').map(l=>l.replace(re,'')).join('\n'); }
+      case 'replace-once': { const f=$('.sp-ro-find')?.value||'',t=$('.sp-ro-to')?.value||'';return data.replace(f,t); }
+      case 'replace-each': { const f=$('.sp-re-find')?.value.split('\n').filter(Boolean),t=$('.sp-re-to')?.value.split('\n').filter(Boolean);let r=data;for(let i=0;i<f.length;i++)if(t[i]!==undefined)r=r.replaceAll(f[i],t[i]);return r; }
+      case 'overlay': { const s=$('.sp-ov-str')?.value||'',start=parseInt($('.sp-ov-start')?.value)||0,end=parseInt($('.sp-ov-end')?.value)||0;return data.split('\n').map(l=>l.slice(0,start)+s+l.slice(end)).join('\n'); }
+      case 'rotate': { const n=parseInt($('.sp-rot-n')?.value)||3;return data.split('\n').map(l=>{const len=l.length;if(!len)return l;const offset=((n%len)+len)%len;return l.slice(len-offset)+l.slice(0,len-offset);}).join('\n'); }
+      case 'reverse-delimited': { const s=$('.sp-rd-sep')?.value||'.';return data.split('\n').map(l=>l.split(s).reverse().join(s)).join('\n'); }
+      case 'chomp': return data.split('\n').map(l=>l.replace(/\r?\n?$/,'')).join('\n');
+      case 'chop': return data.split('\n').map(l=>l.slice(0,-1)).join('\n');
+      case 'left': { const n=parseInt($('.sp-left-n')?.value)||3;return data.split('\n').map(l=>l.slice(0,n)).join('\n'); }
+      case 'right': { const n=parseInt($('.sp-right-n')?.value)||3;return data.split('\n').map(l=>l.slice(-n)).join('\n'); }
+      case 'mid': { const pos=parseInt($('.sp-mid-pos')?.value)||0,len=parseInt($('.sp-mid-len')?.value)||3;return data.split('\n').map(l=>l.slice(pos,pos+len)).join('\n'); }
+      case 'substring-before': { const s=$('.sp-sb-sep')?.value||'';if(!s)return data;return data.split('\n').map(l=>{const i=l.indexOf(s);return i>=0?l.slice(0,i):l;}).join('\n'); }
+      case 'substring-after': { const s=$('.sp-sa-sep')?.value||'';if(!s)return data;return data.split('\n').map(l=>{const i=l.indexOf(s);return i>=0?l.slice(i+s.length):l;}).join('\n'); }
+      case 'substring-between': { const o=$('.sp-sb-open')?.value||'',c=$('.sp-sb-close')?.value||'';if(!o||!c)return data;return data.split('\n').map(l=>{const s=l.indexOf(o);if(s<0)return '';const e=l.indexOf(c,s+o.length);return e>=0?l.slice(s+o.length,e):'';}).join('\n'); }
+      case 'unwrap': { const c=$('.sp-unwrap-c')?.value||'"';return data.split('\n').map(l=>{if(l.startsWith(c)&&l.endsWith(c)&&l.length>=2)return l.slice(c.length,-c.length);return l;}).join('\n'); }
+      case 'default-if-blank': { const d=$('.sp-dib-def')?.value||'';return data.split('\n').map(l=>l.trim()?l:d).join('\n'); }
+      case 'unqualify': { const s=$('.sp-unqual-sep')?.value||'.';return data.split('\n').map(l=>{const i=l.lastIndexOf(s);return i>=0?l.slice(i+s.length):l;}).join('\n'); }
+      case 'simple-match': { const p=$('.sp-sm-pat')?.value||'*';const re=new RegExp('^'+p.replace(/\*/g,'.*').replace(/\?/g,'.')+'$');return data.split('\n').filter(l=>re.test(l)).join('\n'); }
+      case 'contains-any': { const c=$('.sp-cany-chars')?.value||'';const set=new Set(c);return data.split('\n').filter(l=>l.split('').some(ch=>set.has(ch))).join('\n'); }
+      case 'contains-none': { const c=$('.sp-cnone-chars')?.value||'';const set=new Set(c);return data.split('\n').filter(l=>!l.split('').some(ch=>set.has(ch))).join('\n'); }
+      case 'contains-only': { const c=$('.sp-conly-chars')?.value||'';const set=new Set(c);return data.split('\n').filter(l=>l.split('').every(ch=>set.has(ch))).join('\n'); }
+      case 'is-alpha': return data.split('\n').filter(l=>/^[A-Za-z]+$/.test(l)).join('\n');
+      case 'is-numeric': return data.split('\n').filter(l=>/^\d+$/.test(l)).join('\n');
+      case 'is-alphanumeric': return data.split('\n').filter(l=>/^[A-Za-z0-9]+$/.test(l)).join('\n');
+      case 'is-all-lower': return data.split('\n').filter(l=>l===l.toLowerCase()&&/[a-z]/.test(l)).join('\n');
+      case 'is-all-upper': return data.split('\n').filter(l=>l===l.toUpperCase()&&/[A-Z]/.test(l)).join('\n');
+      case 'ordinal-index-of': { const sub=$('.sp-oi-sub')?.value||'',n=parseInt($('.sp-oi-n')?.value)||2;if(!sub)return data;return data.split('\n').map(l=>{let idx=-1;for(let i=0;i<n;i++){idx=l.indexOf(sub,idx+1);if(idx<0)break;}return `${l} | ${idx}`;}).join('\n'); }
       default: return data;
     }
   },
