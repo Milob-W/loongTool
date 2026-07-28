@@ -2,6 +2,7 @@ const StringPipeline = {
   steps: [],
   stepIdCounter: 0,
   peekLogs: [],
+  parsedSource: null,
 
   init() {
     this.renderStringPipeline();
@@ -18,11 +19,38 @@ const StringPipeline = {
   renderStringPipeline() {
     document.getElementById('panel-string-pipeline').innerHTML = `
       <div class="card">
-        <div class="card-header">📥 输入</div>
+        <div class="card-header">📥 1. 数据源</div>
         <div class="card-body">
-          <textarea id="sp-input" class="large" placeholder="输入要处理的文本，每行一个项目或按需格式..."></textarea>
+          <div class="form-row">
+            <label>源格式</label>
+            <select id="sp-source-type" onchange="StringPipeline.onSourceTypeChange()">
+              <option value="text">纯文本 (每行一项)</option>
+              <option value="json">JSON</option>
+              <option value="csv">CSV / TSV</option>
+            </select>
+          </div>
+          <div id="sp-source-config">
+            <div class="form-row" id="sp-json-config" style="display:none">
+              <label>JSONPath</label>
+              <input type="text" id="sp-json-path" value="$" placeholder="$ 或 $.users[*].name" style="width:100%;font-family:monospace">
+              <span class="hint">$=根数组, $.users[*].name=提取每个用户的name</span>
+            </div>
+            <div class="form-row" id="sp-csv-config" style="display:none">
+              <label>分隔符</label>
+              <select id="sp-csv-delimiter">
+                <option value=",">逗号 ,</option>
+                <option value="\t">制表符 Tab</option>
+                <option value="|">竖线 |</option>
+                <option value="custom">自定义</option>
+              </select>
+              <input type="text" id="sp-csv-delimiter-custom" placeholder="自定义分隔符" style="display:none;width:80px">
+              <label style="margin-left:0.5rem"><input type="checkbox" id="sp-csv-header" checked> 首行为表头</label>
+            </div>
+          </div>
+          <textarea id="sp-input" class="large" placeholder="输入要处理的文本..."></textarea>
           <div class="status-bar" id="sp-input-status">0 行</div>
           <div class="btn-group mt-2">
+            <button class="btn btn-sm btn-primary" onclick="StringPipeline.parseSource()">🔄 解析数据源</button>
             <button class="btn btn-sm" onclick="StringPipeline.clearInput()">❌ 清空</button>
           </div>
         </div>
@@ -200,6 +228,11 @@ const StringPipeline = {
       const lines = document.getElementById('sp-input').value.split('\n').length;
       document.getElementById('sp-input-status').textContent = `${lines} 行`;
     });
+    document.getElementById('sp-csv-delimiter').addEventListener('change', () => {
+      const sel = document.getElementById('sp-csv-delimiter');
+      const custom = document.getElementById('sp-csv-delimiter-custom');
+      if (custom) custom.style.display = sel.value === 'custom' ? 'inline-block' : 'none';
+    });
   },
 
   addStep() {
@@ -228,6 +261,87 @@ const StringPipeline = {
     document.getElementById('sp-input').value = '';
     document.getElementById('sp-input-status').textContent = '0 行';
     this.showToast('已清空');
+  },
+  getCSVDelimiter() {
+    const sel = document.getElementById('sp-csv-delimiter').value;
+    if (sel === 'custom') return document.getElementById('sp-csv-delimiter-custom').value || ',';
+    if (sel === '\t') return '\t';
+    return sel;
+  },
+  onSourceTypeChange() {
+    const type = document.getElementById('sp-source-type').value;
+    document.getElementById('sp-json-config').style.display = type === 'json' ? 'flex' : 'none';
+    document.getElementById('sp-csv-config').style.display = type === 'csv' ? 'flex' : 'none';
+    this.parsedSource = null;
+  },
+  setParsedSource(text) {
+    this.parsedSource = text;
+    document.getElementById('sp-input-status').textContent = `${text.split('\n').length} 行 (已解析)`;
+    this.showToast('解析完成');
+  },
+  parseSource() {
+    const raw = document.getElementById('sp-input').value;
+    if (!raw.trim()) { this.showToast('请先输入数据'); return; }
+    const type = document.getElementById('sp-source-type').value;
+    try {
+      if (type === 'json') return this.parseJSONSource(raw);
+      if (type === 'csv') return this.parseCSVSource(raw);
+      // text mode: use raw as-is
+      this.setParsedSource(raw);
+    } catch (e) {
+      this.showToast('解析失败: ' + e.message);
+    }
+  },
+  parseJSONSource(raw) {
+    const data = JSON.parse(raw);
+    let items;
+    if (Array.isArray(data)) {
+      items = data;
+    } else {
+      const path = document.getElementById('sp-json-path').value.trim();
+      if (path && path !== '$') {
+        items = StringPipelineUtils.resolveJSONPath(data, path);
+      } else {
+        // Try to find the first array in the object
+        for (const key of Object.keys(data)) {
+          if (Array.isArray(data[key])) { items = data[key]; break; }
+        }
+        if (!items) items = [data];
+      }
+    }
+    if (!Array.isArray(items)) items = [items];
+    // Convert each item to string (JSON if object, otherwise toString)
+    const lines = items.map(item =>
+      typeof item === 'object' && item !== null ? JSON.stringify(item) : String(item)
+    );
+    this.setParsedSource(lines.join('\n'));
+  },
+  parseCSVSource(raw) {
+    const delimiter = this.getCSVDelimiter();
+    const hasHeader = document.getElementById('sp-csv-header').checked;
+    const rows = raw.split('\n').filter(l => l.trim());
+    if (rows.length === 0) { this.setParsedSource(''); return; }
+    const parseRow = (row) => {
+      const result = []; let cur = '', inQ = false;
+      for (let i = 0; i < row.length; i++) {
+        const ch = row[i];
+        if (ch === '"') { inQ = !inQ; }
+        else if (ch === delimiter && !inQ) { result.push(cur.trim()); cur = ''; }
+        else { cur += ch; }
+      }
+      result.push(cur.trim());
+      return result;
+    };
+    const parsed = rows.map(parseRow);
+    if (hasHeader && parsed.length > 0) {
+      const header = parsed[0];
+      const data = parsed.slice(1);
+      this.setParsedSource(data.map(row =>
+        row.map((cell, i) => `${header[i] || 'Col'+(i+1)}:${cell}`).join(', ')
+      ).join('\n'));
+    } else {
+      this.setParsedSource(parsed.map(row => row.join(delimiter)).join('\n'));
+    }
   },
 
   getStepConfig(type) {
@@ -534,11 +648,13 @@ const StringPipeline = {
 
   /* ========== 执行管道 ========== */
   execute() {
-    const input = document.getElementById('sp-input').value;
-    if (!input.trim()) { this.showToast('请先输入文本'); return; }
+    const raw = document.getElementById('sp-input').value;
+    if (!raw.trim()) { this.showToast('请先输入数据'); return; }
+    // 自动解析：如果还没有解析或源文本变了，自动解析
+    const input = this.parsedSource || raw;
     this.peekLogs = [];
     let data = input;
-    const allOutputs = [{ step: '原始输入', data }];
+    const allOutputs = [{ step: '原始输入' + (this.parsedSource ? '(已解析)' : ''), data }];
     let error = null;
     for (const step of this.steps) {
       try { data = this.processStep(step, data); allOutputs.push({ step: this.getStepLabel(step.type), data }); }
@@ -739,6 +855,34 @@ const StringPipelineUtils = {
     return cols.filter(n=>!isNaN(n)&&n>0);
   },
   escapeRegex(str) { return str.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); },
+  resolveJSONPath(obj, path) {
+    // Simplified JSONPath: $, $.key, $.key.subkey, $[*], $.arr[*].key
+    if (!path || path === '$') return Array.isArray(obj) ? obj : [obj];
+    let p = path;
+    if (p.startsWith('$.')) p = p.slice(2);
+    else if (p.startsWith('$')) p = p.slice(1);
+    const parts = p.split('.').filter(Boolean);
+    let current = [obj];
+    for (const part of parts) {
+      if (part === '*') {
+        current = current.flatMap(c => Array.isArray(c) ? c : Object.values(c));
+      } else if (part.endsWith(']')) {
+        const match = part.match(/^(\w+)?\[(\d+|\*)\]$/);
+        if (match) {
+          const [, key, idx] = match;
+          if (key) current = current.map(c => c[key]).filter(c => c !== undefined);
+          if (idx === '*') current = current.flatMap(c => Array.isArray(c) ? c : [c]);
+          else current = current.map(c => Array.isArray(c) ? c[parseInt(idx)] : c).filter(c => c !== undefined);
+        }
+      } else {
+        current = current.flatMap(c => {
+          if (Array.isArray(c)) return c.map(item => item[part]).filter(v => v !== undefined);
+          return c[part] !== undefined ? [c[part]] : [];
+        });
+      }
+    }
+    return current;
+  },
   escapeStr(str, lang) {
     const map = {'\\':'\\\\','\n':'\\n','\r':'\\r','\t':'\\t','"':'\\"',"'":"\\'"};
     if (lang==='js') { map['`']='\\`'; map['$']='\\$'; }
