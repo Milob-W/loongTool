@@ -798,4 +798,89 @@ eq('isAlpha 含标点过滤', filterLines('abc\na.b\nABC', l=>/^[A-Za-z]+$/.test
 eq('isNumeric 小数过滤', filterLines('123\n3.14\na', l=>/^\d+$/.test(l)), '123');
 eq('isAlphanumeric', filterLines('abc123\n123\nabc', l=>/^[A-Za-z0-9]+$/.test(l)), 'abc123\n123\nabc');
 
+console.log('\n=== 🔗 扩展操作(新增) ===\n');
+// lookup
+const lookup = (data, mapStr) => {
+  const map = {}; mapStr.split('\n').filter(l=>l.trim()).forEach(l=>{const i=l.indexOf('=');if(i>0){map[l.slice(0,i).trim()]=l.slice(i+1).trim();}});
+  return data.split('\n').map(l=>map[l]!==undefined?map[l]:l).join('\n');
+};
+eq('lookup 精确替换', lookup('apple\nbanana\ncherry', 'apple=苹果\nbanana=香蕉'), '苹果\n香蕉\ncherry');
+eq('lookup 无映射不变', lookup('hello', 'a=x'), 'hello');
+eq('lookup 空映射', lookup('hello', ''), 'hello');
+
+// comm
+const comm = (dataA, dataB, mode) => {
+  const a = dataA.split('\n').filter(l=>l.trim()); const b = dataB.split('\n').filter(l=>l.trim());
+  const sb = new Set(b), sa = new Set(a);
+  const ao = a.filter(l=>!sb.has(l)), bo = b.filter(l=>!sa.has(l)), both = a.filter(l=>sb.has(l));
+  if(mode==='a-only')return ao.join('\n'); if(mode==='b-only')return bo.join('\n'); if(mode==='both')return both.join('\n');
+  return `# A独有 (${ao.length})\n${ao.join('\n')}\n\n# B独有 (${bo.length})\n${bo.join('\n')}\n\n# 共有 (${both.length})\n${both.join('\n')}`;
+};
+const commA = 'a\nb\nc', commB = 'b\nc\nd';
+inc('comm all 含A独有', comm(commA, commB, 'all'), 'a');
+inc('comm all 含B独有', comm(commA, commB, 'all'), 'd');
+inc('comm all 含共有', comm(commA, commB, 'all'), 'c');
+eq('comm a-only', comm(commA, commB, 'a-only'), 'a');
+eq('comm b-only', comm(commA, commB, 'b-only'), 'd');
+eq('comm both', comm(commA, commB, 'both'), 'b\nc');
+
+// fold
+const fold = (data, w) => data.split('\n').flatMap(l => l.match(new RegExp('.{1,'+w+'}','g'))||[]).join('\n');
+eq('fold 宽度5', fold('abcdefghij', 5), 'abcde\nfghij');
+eq('fold 宽度3', fold('abcdef', 3), 'abc\ndef');
+
+// unexpand
+const unexpand = (data, n) => data.split('\n').map(l=>l.replace(new RegExp('^ {'+n+'}','gm'),'\t')).join('\n');
+eq('unexpand 4空格', unexpand('    hello', 4), '\thello');
+eq('unexpand 不足不转', unexpand('  hello', 4), '  hello');
+
+// accumulate
+const accum = (data, mode) => {
+  const lines=data.split('\n'); const r=[]; let acc=0, parts=[];
+  for(let i=0;i<lines.length;i++){const l=lines[i];if(mode==='sum'){acc+=parseFloat(l)||0;r.push(String(acc));}else if(mode==='count'){r.push(String(i+1));}else{parts.push(l);r.push(parts.join(' '));}}
+  return r.join('\n');
+};
+eq('accum-sum', accum('1\n2\n3', 'sum'), '1\n3\n6');
+eq('accum-count', accum('a\nb\nc', 'count'), '1\n2\n3');
+eq('accum-concat', accum('a\nb\nc', 'concat'), 'a\na b\na b c');
+
+// regex-test
+const rt = (data, pat, mode) => { const re=new RegExp(pat,'g');return data.split('\n').map(l=>{const m=l.match(re);return mode==='bool'?`${re.test(l)} | ${l}`:`${(m||[]).length} | ${l}`;}).join('\n'); };
+eq('regex-test bool', rt('abc\n123', '\\d', 'bool').includes('true | 123'), true);
+eq('regex-test 中文', rt('abc\n123', '\\d', 'bool').includes('false | abc'), true);
+eq('regex-test count', rt('a1b2c3', '\\d', 'count'), '3 | a1b2c3');
+
+// count
+const cnt = data => { const lines=data.split('\n');return `行数: ${lines.length}\n字符数: ${data.length}\n单词数: ${data.split(/\s+/).filter(Boolean).length}`; };
+inc('count 含行数', cnt('a\nb\nc'), '行数: 3');
+inc('count 含字符', cnt('a\nb\nc'), '字符数: 5');
+inc('count 含单词', cnt('a b\nc'), '单词数: 3');
+
+// pivot
+const pivot = (data, inDelim, outDelim) => data.split('\n').filter(l=>l.trim()).flatMap(l=>l.split(inDelim)).join(outDelim);
+eq('pivot 基本', pivot('a,b\nc,d', ',', '|'), 'a|b|c|d');
+
+// unpivot
+const unpivot = (data, delim) => data.split('\n').flatMap(l=>l.split(delim)).join('\n');
+eq('unpivot 基本', unpivot('a,b,c', ','), 'a\nb\nc');
+eq('unpivot 多行', unpivot('a,b\nc,d', ','), 'a\nb\nc\nd');
+
+// window
+const windowFn = (data, size, step, sep) => {
+  const lines=data.split('\n');const r=[];
+  for(let i=0;i<lines.length-size+1;i+=step) r.push(lines.slice(i,i+size).join('\n'));
+  return r.join('\n'+sep+'\n');
+};
+inc('window 包含', windowFn('a\nb\nc\nd', 2, 1, '---'), 'a\nb');
+inc('window 分隔符', windowFn('a\nb\nc\nd', 2, 1, '---'), '---');
+eq('window 步长2', windowFn('a\nb\nc\nd', 2, 2, '---'), 'a\nb\n---\nc\nd');
+
+// dedupe-consecutive
+const dedupe = data => data.split('\n').filter((l,i,arr)=>i===0||l!==arr[i-1]).join('\n');
+eq('dedupe 连续重复', dedupe('a\na\nb\nb\nc'), 'a\nb\nc');
+eq('dedupe 非连续保留', dedupe('a\nb\na'), 'a\nb\na');
+eq('dedupe 无重复', dedupe('a\nb\nc'), 'a\nb\nc');
+
+console.log('扩展操作全部通过');
+
 summary();

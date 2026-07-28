@@ -217,6 +217,25 @@ const StringPipeline = {
                 <option value="is-all-upper">isAllUpperCase 全大写行</option>
                 <option value="ordinal-index-of">ordinalIndexOf 第N次出现位置</option>
               </optgroup>
+              <optgroup label="🔗 列表/集合运算">
+                <option value="comm">comm 两列表比对</option>
+                <option value="dedupe-consecutive">dedupe 去除连续重复行</option>
+                <option value="lookup">lookup 字典映射</option>
+                <option value="window">window 滑动窗口</option>
+              </optgroup>
+              <optgroup label="📊 聚合/透视">
+                <option value="accumulate">accumulate 累积</option>
+                <option value="count">count 聚合统计</option>
+                <option value="pivot">pivot 行转列</option>
+                <option value="unpivot">unpivot 列转行</option>
+              </optgroup>
+              <optgroup label="🔬 正则/检测">
+                <option value="regex-test">regex-test 正则检测</option>
+              </optgroup>
+              <optgroup label="📐 其他变换">
+                <option value="fold">fold 固定宽度折行</option>
+                <option value="unexpand">unexpand 空格转制表符</option>
+              </optgroup>
             </select>
             <button class="btn btn-primary" onclick="StringPipeline.addStep()">+ 添加步骤</button>
           </div>
@@ -546,30 +565,35 @@ const StringPipeline = {
       'ordinal-index-of': `<input class="sp-oi-sub" placeholder="子串" style="width:80px">
         <input class="sp-oi-n" type="number" placeholder="第N次" value="2" min="1" style="width:60px">
         <span class="hint">StringUtils.ordinalIndexOf — 第N次出现的位置，输出: "行内容 | N"</span>`,
-      /* ===== 更多语言/库 ===== */
-      'collapse-spaces': `<input class="sp-cs-replace" placeholder="替换为" value=" " style="width:60px"><span class="hint">Guava collapseFrom — 合并连续空白为指定字符</span>`,
-      'split-lines': `<span class="hint">Python splitlines — 按换行符拆分(保留空行)</span>`,
-      translate: `<input class="sp-tr-from" placeholder="原字符" style="width:80px"><input class="sp-tr-to" placeholder="目标字符" style="width:80px"><span class="hint">Python str.translate / Ruby tr — 逐字符映射</span>`,
-      'remove-chars': `<input class="sp-rc-chars" placeholder="要删除的字符" style="width:120px"><span class="hint">Guava removeFrom — 删除行中所有指定字符</span>`,
-      'retain-chars': `<input class="sp-rt-chars" placeholder="要保留的字符" style="width:120px"><span class="hint">Guava retainFrom — 只保留行中这些字符</span>`,
-      'common-prefix': `<span class="hint">Guava commonPrefix — 所有行的公共前缀(输出1行)</span>`,
-      'common-suffix': `<span class="hint">Guava commonSuffix — 所有行的公共后缀(输出1行)</span>`,
-      insert: `<input class="sp-ins-pos" type="number" placeholder="位置" value="0" style="width:60px"><input class="sp-ins-text" placeholder="插入文本" style="width:100px"><span class="hint">C# Insert — 在指定位置插入文本</span>`,
-      'replace-by-pos': `<input class="sp-rbp-pos" type="number" placeholder="起始" value="0" style="width:60px">
-        <input class="sp-rbp-len" type="number" placeholder="长度" value="1" style="width:60px">
-        <input class="sp-rbp-text" placeholder="替换文本" style="width:100px">
-        <span class="hint">SQL INSERT — 替换指定位置开始的N个字符</span>`,
-      'start-case': `<span class="hint">lodash startCase / PHP ucwords — 每个单词首字母大写</span>`,
-      words: `<span class="hint">lodash words — 将每行按单词拆分，每词一行</span>`,
-      'escape-regex': `<span class="hint">lodash escapeRegExp — 转义字符串中的正则特殊字符</span>`,
-      'strip-tags': `<input class="sp-strip-tags" placeholder="允许的标签(可选)" style="width:120px"><span class="hint">PHP strip_tags — 去除HTML/XML标签</span>`,
-      'is-title-case': `<span class="hint">Python istitle — 仅保留标题大小写行(每个单词首字母大写)</span>`,
-      length: `<span class="hint">输出每行的字符长度: "行内容 | 长度"</span>`,
-      'word-count': `<span class="hint">输出每行的单词数: "行内容 | 单词数"</span>`,
-      format: `<input class="sp-fmt-tpl" placeholder='如: {0} → {1}' style="width:200px"><span class="hint">Python Format / C# Format — 按位置{0}{1}格式化</span>`,
-      substr: `<input class="sp-substr-start" type="number" placeholder="起始" value="0" style="width:60px">
-        <input class="sp-substr-len" type="number" placeholder="长度(0=到末尾)" value="0" style="width:60px">
-        <span class="hint">PHP substr — 从起始位置取N个字符</span>`,
+      /* ===== 扩展操作 ===== */
+      lookup: `<textarea class="sp-lookup-map" placeholder="映射表&#10;原值→新值(每行一项)" style="width:200px;height:40px;font-size:11px"></textarea>
+        <span class="hint">查找替换，如 "旧值=新值" 每行一项</span>`,
+      comm: `<textarea class="sp-comm-list" placeholder="第二个列表&#10;每行一项" style="width:140px;height:40px;font-size:11px"></textarea>
+        <select class="sp-comm-mode"><option value="all">全部(A独有+共有+B独有)</option><option value="a-only">仅在A中</option><option value="b-only">仅在B中</option><option value="both">两者共有</option></select>`,
+      fold: `<input class="sp-fold-width" type="number" value="20" min="1" style="width:60px">
+        <span class="hint">在精确列位置折行(不保留单词完整性)</span>`,
+      unexpand: `<input class="sp-unexpand-size" type="number" value="4" min="2" style="width:60px">
+        <span class="hint">将前导空格转为制表符，每N个空格换一个Tab</span>`,
+      accumulate: `<select class="sp-accum-mode">
+        <option value="sum">Sum 累加数字</option>
+        <option value="concat">Concat 累积连接</option>
+        <option value="count">Count 行计数</option>
+      </select>
+      <input class="sp-accum-sep" placeholder="连接符" value=" " style="width:60px;display:none">
+      <span class="hint">每行输出从开始到当前行的累积值</span>`,
+      'regex-test': `<input class="sp-rt-pat" placeholder="正则" style="width:140px">
+        <select class="sp-rt-mode"><option value="bool">true/false 是否匹配</option><option value="count">匹配次数</option></select>`,
+      count: `<span class="hint">输出聚合统计: 总行数、字符数、单词数</span>`,
+      pivot: `<input class="sp-pivot-delim" placeholder="输入分隔符" value="," style="width:70px">
+        <input class="sp-pivot-out" placeholder="输出分隔符" value="|" style="width:60px">
+        <span class="hint">将多行数据转置为一行多列</span>`,
+      unpivot: `<input class="sp-unpivot-delim" placeholder="分隔符" value="," style="width:70px">
+        <span class="hint">将一行数据按分隔符拆为多行</span>`,
+      window: `<input class="sp-win-size" type="number" placeholder="窗口大小" value="3" min="1" style="width:70px">
+        <input class="sp-win-step" type="number" placeholder="步长" value="1" min="1" style="width:60px">
+        <input class="sp-win-sep" placeholder="组间分隔" value="---" style="width:70px">
+        <span class="hint">滑动窗口: 每size行一组, 步长step</span>`,
+      'dedupe-consecutive': `<span class="hint">删除连续重复的行(仅相邻重复的去重)</span>`,
     }; // ← end of cfg
     return cfg[type] || '';
   },
@@ -637,6 +661,12 @@ const StringPipeline = {
       'is-alphanumeric':'isAlphanumeric 仅字母数字',
       'is-all-lower':'isAllLowerCase 全小写', 'is-all-upper':'isAllUpperCase 全大写',
       'ordinal-index-of':'ordinalIndexOf 第N次位置',
+      /* 扩展 */
+      lookup:'lookup 字典映射', comm:'comm 两表比对', fold:'fold 固定折行',
+      unexpand:'unexpand 空格转制表符', accumulate:'accumulate 累积',
+      'regex-test':'regex-test 正则检测', count:'count 聚合统计',
+      pivot:'pivot 行转列', unpivot:'unpivot 列转行',
+      window:'window 滑动窗口', 'dedupe-consecutive':'去连续重复',
       /* 更多语言/库 */
       'collapse-spaces':'collapseSpaces 合并空白', 'split-lines':'splitlines 智能拆分',
       translate:'translate/tr 字符映射', 'remove-chars':'removeChars 删除字符',
@@ -850,6 +880,18 @@ const StringPipeline = {
       case 'word-count': return data.split('\n').map(l=>{const c=l.trim()?l.split(/\s+/).length:0;return `${c} | ${l}`;}).join('\n');
       case 'format': { const fmt=$('.sp-fmt-tpl')?.value||'{0}';return data.split('\n').map((l,i)=>{const parts=l.split(/\s+/);return fmt.replace(/\{(\d+)\}/g,(_,n)=>parts[parseInt(n)]||'');}).join('\n'); }
       case 'substr': { const s=parseInt($('.sp-substr-start')?.value)||0,len=parseInt($('.sp-substr-len')?.value)||0;return data.split('\n').map(l=>len>0?l.substr(s,len):l.substr(s)).join('\n'); }
+      /* ===== 扩展操作 ===== */
+      case 'lookup': { const mapStr=$('.sp-lookup-map')?.value||'';if(!mapStr.trim())return data;const map={};mapStr.split('\n').filter(l=>l.trim()).forEach(l=>{const i=l.indexOf('=');if(i>0){map[l.slice(0,i).trim()]=l.slice(i+1).trim();}});return data.split('\n').map(l=>map[l]!==undefined?map[l]:l).join('\n'); }
+      case 'comm': { const listB=$('.sp-comm-list')?.value||'',mode=$('.sp-comm-mode')?.value||'all';const linesA=data.split('\n').filter(l=>l.trim());const linesB=listB.split('\n').filter(l=>l.trim());const setB=new Set(linesB);const setA=new Set(linesA);const aOnly=linesA.filter(l=>!setB.has(l));const bOnly=linesB.filter(l=>!setA.has(l));const both=linesA.filter(l=>setB.has(l));if(mode==='a-only')return aOnly.join('\n');if(mode==='b-only')return bOnly.join('\n');if(mode==='both')return both.join('\n');return `# A独有 (${aOnly.length})\n${aOnly.join('\n')}\n\n# B独有 (${bOnly.length})\n${bOnly.join('\n')}\n\n# 共有 (${both.length})\n${both.join('\n')}`; }
+      case 'fold': { const w=parseInt($('.sp-fold-width')?.value)||20;return data.split('\n').flatMap(l=>{const r=[];for(let i=0;i<l.length;i+=w)r.push(l.slice(i,i+w));return r;}).join('\n'); }
+      case 'unexpand': { const n=parseInt($('.sp-unexpand-size')?.value)||4;return data.split('\n').map(l=>l.replace(new RegExp(`^ {${n}}`,'gm'),'\t')).join('\n'); }
+      case 'accumulate': { const mode=$('.sp-accum-mode')?.value||'sum',sep=$('.sp-accum-sep')?.value||' ';const lines=data.split('\n');const r=[];let acc=0,parts=[];for(let i=0;i<lines.length;i++){const l=lines[i];if(mode==='sum'){acc+=parseFloat(l)||0;r.push(String(acc));}else if(mode==='count'){r.push(String(i+1));}else{parts.push(l);r.push(parts.join(sep));}}return r.join('\n'); }
+      case 'regex-test': { const pat=$('.sp-rt-pat')?.value||'',mode=$('.sp-rt-mode')?.value||'bool';if(!pat)return data;const re=new RegExp(pat,'g');return data.split('\n').map(l=>{const m=l.match(re);return mode==='bool'?`${re.test(l)} | ${l}`:`${(m||[]).length} | ${l}`;}).join('\n'); }
+      case 'count': { const lines=data.split('\n');const chars=data.length;const words=data.split(/\s+/).filter(Boolean).length;return `行数: ${lines.length}\n字符数: ${chars}\n单词数: ${words}`; }
+      case 'pivot': { const delim=$('.sp-pivot-delim')?.value||',',out=$('.sp-pivot-out')?.value||'|';const cells=data.split('\n').filter(l=>l.trim()).flatMap(l=>l.split(delim));return cells.join(out); }
+      case 'unpivot': { const delim=$('.sp-unpivot-delim')?.value||',';return data.split('\n').flatMap(l=>l.split(delim)).join('\n'); }
+      case 'window': { const size=parseInt($('.sp-win-size')?.value)||3,step=parseInt($('.sp-win-step')?.value)||1,sep=$('.sp-win-sep')?.value||'---';const lines=data.split('\n');const r=[];for(let i=0;i<lines.length-size+1;i+=step)r.push(lines.slice(i,i+size).join('\n'));return r.join('\n'+sep+'\n'); }
+      case 'dedupe-consecutive': { return data.split('\n').filter((l,i,arr)=>i===0||l!==arr[i-1]).join('\n'); }
       default: return data;
     }
   },
@@ -1044,10 +1086,5 @@ const StringPipelineUtils = {
       return [vU & 0xFF, (vU >>> 8) & 0xFF, (vU >>> 16) & 0xFF, (vU >>> 24) & 0xFF]
         .map(b => b.toString(16).padStart(2, '0')).join('');
     }).join('');
-  }
-      }
-      h0 = (h0 + a) >>> 0; h1 = (h1 + b) >>> 0; h2 = (h2 + c) >>> 0; h3 = (h3 + d) >>> 0;
-    }
-    return [h0,h1,h2,h3].map(v => (v>>>0).toString(16).padStart(8,'0')).join('');
   }
 };
