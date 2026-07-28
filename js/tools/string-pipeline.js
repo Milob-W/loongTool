@@ -775,7 +775,7 @@ const StringPipeline = {
       case 'batch': { const size=parseInt($('.sp-batch-size')?.value)||3,sep=$('.sp-batch-sep')?.value||'---';const lines=data.split('\n');const groups=[];for(let i=0;i<lines.length;i+=size)groups.push(lines.slice(i,i+size).join('\n'));return groups.join('\n'+sep+'\n'); }
       case 'chunk': { const size=parseInt($('.sp-chunk-size')?.value)||5;return data.split('\n').flatMap(l=>{const r=[];for(let i=0;i<l.length;i+=size)r.push(l.slice(i,i+size));return r;}).join('\n'); }
       case 'word-wrap': { const w=parseInt($('.sp-ww-width')?.value)||20;return data.split('\n').flatMap(l=>{const r=[];let cur='';for(const word of l.split(/\s+/)){if(!word)continue;if(cur.length+word.length+(cur?1:0)>w){if(cur)r.push(cur);cur=word;}else cur=cur?cur+' '+word:word;}if(cur)r.push(cur);return r;}).join('\n'); }
-      case 'mask': { const m=$('.sp-mask-mode')?.value||'end',c=$('.sp-mask-char')?.value||'*',k=parseInt($('.sp-mask-keep')?.value)||4;return data.split('\n').map(l=>{switch(m){case'end':if(l.length<=k)return c.repeat(l.length);return l.slice(0,k)+c.repeat(l.length-k);case'start':if(l.length<=k)return c.repeat(l.length);return c.repeat(l.length-k)+l.slice(l.length-k);case'middle':if(l.length<=k+2)return c.repeat(l.length);const half=Math.floor(k/2);return l.slice(0,half)+c.repeat(l.length-k)+l.slice(l.length-half);case'email':{const at=l.indexOf('@');if(at<=1)return l;return l[0]+c.repeat(at-1)+l.slice(at);}default:return l;}}).join('\n'); }
+      case 'mask': { const m=$('.sp-mask-mode')?.value||'end',c=$('.sp-mask-char')?.value||'*',k=parseInt($('.sp-mask-keep')?.value)||4;return data.split('\n').map(l=>{switch(m){case'end':if(l.length<=k)return c.repeat(l.length);return l.slice(0,k)+c.repeat(l.length-k);case'start':if(l.length<=k)return c.repeat(l.length);return c.repeat(l.length-k)+l.slice(l.length-k);case'middle':if(l.length<=k+2)return c.repeat(l.length);const half=Math.floor(k/2);return l.slice(0,half)+c.repeat(l.length-k)+l.slice(l.length-half);case'email':{const at=l.indexOf('@');if(at<1)return l;return l[0]+c.repeat(at-1)+l.slice(at);}default:return l;}}).join('\n'); }
       case 'remove-quotes': return data.split('\n').map(l=>l.replace(/^['"]|['"]$/g,'')).join('\n');
       case 'slugify': return data.split('\n').map(l=>l.toLowerCase().trim().replace(/[^\w\s-]/g,'').replace(/[\s_]+/g,'-').replace(/^-+|-+$/g,'')).join('\n');
       case 'to-ascii': return data.split('\n').map(l=>l.normalize('NFD').replace(/[\u0300-\u036f]/g,'')).join('\n');
@@ -810,7 +810,7 @@ const StringPipeline = {
       case 'overlay': { const s=$('.sp-ov-str')?.value||'',start=parseInt($('.sp-ov-start')?.value)||0,end=parseInt($('.sp-ov-end')?.value)||0;return data.split('\n').map(l=>l.slice(0,start)+s+l.slice(end)).join('\n'); }
       case 'rotate': { const n=parseInt($('.sp-rot-n')?.value)||3;return data.split('\n').map(l=>{const len=l.length;if(!len)return l;const offset=((n%len)+len)%len;return l.slice(len-offset)+l.slice(0,len-offset);}).join('\n'); }
       case 'reverse-delimited': { const s=$('.sp-rd-sep')?.value||'.';return data.split('\n').map(l=>l.split(s).reverse().join(s)).join('\n'); }
-      case 'chomp': return data.split('\n').map(l=>l.replace(/\r?\n?$/,'')).join('\n');
+      case 'chomp': return data.replace(/\r?\n?$/,'');
       case 'chop': return data.split('\n').map(l=>l.slice(0,-1)).join('\n');
       case 'left': { const n=parseInt($('.sp-left-n')?.value)||3;return data.split('\n').map(l=>l.slice(0,n)).join('\n'); }
       case 'right': { const n=parseInt($('.sp-right-n')?.value)||3;return data.split('\n').map(l=>l.slice(-n)).join('\n'); }
@@ -828,12 +828,12 @@ const StringPipeline = {
       case 'is-alpha': return data.split('\n').filter(l=>/^[A-Za-z]+$/.test(l)).join('\n');
       case 'is-numeric': return data.split('\n').filter(l=>/^\d+$/.test(l)).join('\n');
       case 'is-alphanumeric': return data.split('\n').filter(l=>/^[A-Za-z0-9]+$/.test(l)).join('\n');
-      case 'is-all-lower': return data.split('\n').filter(l=>l===l.toLowerCase()&&/[a-z]/.test(l)).join('\n');
-      case 'is-all-upper': return data.split('\n').filter(l=>l===l.toUpperCase()&&/[A-Z]/.test(l)).join('\n');
+      case 'is-all-lower': return data.split('\n').filter(l=>/^[a-z]+$/.test(l.trim())).join('\n');
+      case 'is-all-upper': return data.split('\n').filter(l=>/^[A-Z]+$/.test(l.trim())).join('\n');
       case 'ordinal-index-of': { const sub=$('.sp-oi-sub')?.value||'',n=parseInt($('.sp-oi-n')?.value)||2;if(!sub)return data;return data.split('\n').map(l=>{let idx=-1;for(let i=0;i<n;i++){idx=l.indexOf(sub,idx+1);if(idx<0)break;}return `${l} | ${idx}`;}).join('\n'); }
       /* ===== 更多语言/库 ===== */
       case 'collapse-spaces': { const c=$('.sp-cs-replace')?.value||' ';return data.split('\n').map(l=>l.replace(/\s+/g,c)).join('\n'); }
-      case 'split-lines': return data.split('\n').flatMap(l=>l.split(/\r?\n/)).join('\n');
+      case 'split-lines': return data.replace(/\r\n/g,'\n').split('\n').join('\n');
       case 'translate': { const f=$('.sp-tr-from')?.value||'',t=$('.sp-tr-to')?.value||'';if(!f)return data;const map={};for(let i=0;i<f.length;i++)map[f[i]]=t[i]||'';return data.split('\n').map(l=>l.split('').map(c=>map[c]!==undefined?map[c]:c).join('')).join('\n'); }
       case 'remove-chars': { const c=$('.sp-rc-chars')?.value||'';const re=new RegExp(`[${StringPipelineUtils.escapeRegex(c)}]`,'g');return data.split('\n').map(l=>l.replace(re,'')).join('\n'); }
       case 'retain-chars': { const c=$('.sp-rt-chars')?.value||'';const set=new Set(c);return data.split('\n').map(l=>l.split('').filter(ch=>set.has(ch)).join('')).join('\n'); }
@@ -919,8 +919,11 @@ const StringPipelineUtils = {
     const parts = str.split(','); const cols = [];
     for (const p of parts) {
       const t = p.trim();
-      if (t.includes('-')) { const [s,e]=t.split('-').map(Number); for(let i=s;i<=e;i++) cols.push(i); }
-      else cols.push(Number(t));
+      if (!t || /^\d+$/.test(t)) { cols.push(Number(t)); }
+      else if (t.includes('-') && !t.startsWith('-')) {
+        const [s,e]=t.split('-').map(Number);
+        if (!isNaN(s) && !isNaN(e)) for(let i=s;i<=e;i++) cols.push(i);
+      }
     }
     return cols.filter(n=>!isNaN(n)&&n>0);
   },
@@ -947,7 +950,8 @@ const StringPipelineUtils = {
       } else {
         current = current.flatMap(c => {
           if (Array.isArray(c)) return c.map(item => item[part]).filter(v => v !== undefined);
-          return c[part] !== undefined ? [c[part]] : [];
+          if (c[part] === undefined) return [];
+          return Array.isArray(c[part]) ? c[part] : [c[part]];
         });
       }
     }
@@ -975,49 +979,75 @@ const StringPipelineUtils = {
     return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
   },
   md5(str) {
-    // Simple MD5 implementation for browser compatibility
-    const md5cycle = (x, k) => {
-      let a=x[0],b=x[1],c=x[2],d=x[3];
-      a=ff(a,b,c,d,k[0],7,-680876936);d=ff(d,a,b,c,k[1],12,-389564586);c=ff(c,d,a,b,k[2],17,606105819);b=ff(b,c,d,a,k[3],22,-1044525330);
-      a=ff(a,b,c,d,k[4],7,-176418897);d=ff(d,a,b,c,k[5],12,1200080426);c=ff(c,d,a,b,k[6],17,-1473231341);b=ff(b,c,d,a,k[7],22,-45705983);
-      a=ff(a,b,c,d,k[8],7,1770035416);d=ff(d,a,b,c,k[9],12,-1958414417);c=ff(c,d,a,b,k[10],17,-42063);b=ff(b,c,d,a,k[11],22,-1990404162);
-      a=ff(a,b,c,d,k[12],7,1804603682);d=ff(d,a,b,c,k[13],12,-40341101);c=ff(c,d,a,b,k[14],17,-1502002290);b=ff(b,c,d,a,k[15],22,1236535329);
-      a=gg(a,b,c,d,k[1],5,-165796510);d=gg(d,a,b,c,k[6],9,-1069501632);c=gg(c,d,a,b,k[11],14,643717713);b=gg(b,c,d,a,k[0],20,-373897302);
-      a=gg(a,b,c,d,k[5],5,-701558691);d=gg(d,a,b,c,k[10],9,38016083);c=gg(c,d,a,b,k[15],14,-660478335);b=gg(b,c,d,a,k[4],20,-405537848);
-      a=gg(a,b,c,d,k[9],5,568446438);d=gg(d,a,b,c,k[14],9,-1019803690);c=gg(c,d,a,b,k[3],14,-187363961);b=gg(b,c,d,a,k[8],20,1163531501);
-      a=gg(a,b,c,d,k[13],5,-1444681467);d=gg(d,a,b,c,k[2],9,-51403784);c=gg(c,d,a,b,k[7],14,1735328473);b=gg(b,c,d,a,k[12],20,-1926607734);
-      a=hh(a,b,c,d,k[5],4,-378558);d=hh(d,a,b,c,k[8],11,-2022574463);c=hh(c,d,a,b,k[11],16,1839030562);b=hh(b,c,d,a,k[14],23,-35309556);
-      a=hh(a,b,c,d,k[1],4,-1530992060);d=hh(d,a,b,c,k[4],11,1272893353);c=hh(c,d,a,b,k[7],16,-155497632);b=hh(b,c,d,a,k[10],23,-1094730640);
-      a=hh(a,b,c,d,k[13],4,681279174);d=hh(d,a,b,c,k[0],11,-358537222);c=hh(c,d,a,b,k[3],16,-722521979);b=hh(b,c,d,a,k[6],23,76029189);
-      a=hh(a,b,c,d,k[9],4,-640364487);d=hh(d,a,b,c,k[12],11,-421815835);c=hh(c,d,a,b,k[15],16,530742520);b=hh(b,c,d,a,k[2],23,-995338651);
-      a=ii(a,b,c,d,k[0],6,-198630844);d=ii(d,a,b,c,k[7],10,1126891415);c=ii(c,d,a,b,k[14],15,-1416354905);b=ii(b,c,d,a,k[5],21,-57434055);
-      a=ii(a,b,c,d,k[12],6,1700485571);d=ii(d,a,b,c,k[3],10,-1894986606);c=ii(c,d,a,b,k[10],15,-1051523);b=ii(b,c,d,a,k[1],21,-2054922799);
-      a=ii(a,b,c,d,k[8],6,1873313359);d=ii(d,a,b,c,k[15],10,-30611744);c=ii(c,d,a,b,k[6],15,-1560198380);b=ii(b,c,d,a,k[13],21,1309151649);
-      a=ii(a,b,c,d,k[4],6,-145523070);d=ii(d,a,b,c,k[11],10,-1120210379);c=ii(c,d,a,b,k[2],15,718787259);b=ii(b,c,d,a,k[9],21,-343485551);
-      return [a,b,c,d].map((n,i)=>x[i]+n);
+    // webtoolkit.md5 (public domain) adapted for UTF-8
+    const s = unescape(encodeURIComponent(str));
+    const n = s.length;
+    const x = [];
+    const nWords = (((n + 8) >>> 6) + 1) << 4;
+    for (let i = 0; i < nWords; i++) x[i] = 0;
+    for (let i = 0; i < n; i++) x[i>>2] |= (s.charCodeAt(i) & 0xFF) << ((i & 3) * 8);
+    x[n>>2] |= 0x80 << ((n & 3) * 8);
+    x[14] = n * 8;
+    const add = (x, y) => {
+      const l = (x & 0xFFFF) + (y & 0xFFFF);
+      const m = (x >>> 16) + (y >>> 16) + (l >>> 16);
+      return (m << 16) | (l & 0xFFFF);
     };
-    const cmn=(q,a,b,x,s,t)=>((a+q+x+t)<<s|(a+q+x+t)>>>(32-s))+b;
-    const ff=(a,b,c,d,x,s,t)=>cmn((b&c)|((~b)&d),a,b,x,s,t);
-    const gg=(a,b,c,d,x,s,t)=>cmn((b&d)|(c&(~d)),a,b,x,s,t);
-    const hh=(a,b,c,d,x,s,t)=>cmn(b^c^d,a,b,x,s,t);
-    const ii=(a,b,c,d,x,s,t)=>cmn(c^(b|(~d)),a,b,x,s,t);
-    const str2binl = (s) => {
-      const bin = []; let mask = (1<<8)-1;
-      for(let i=0; i<s.length*8; i+=8) bin[i>>5] |= (s.charCodeAt(i/8) & mask) << (i%32);
-      return bin;
+    const r = (v, s) => (v << s) | (v >>> (32 - s));
+    const F = (x, y, z) => (x & y) | (~x & z);
+    const G = (x, y, z) => (x & z) | (y & ~z);
+    const H = (x, y, z) => x ^ y ^ z;
+    const I = (x, y, z) => y ^ (x | ~z);
+    const T = [-680876936, -389564586, 606105819, -1044525330, -176418897, 1200080426, -1473231341, -45705983, 1770035416, -1958414417, -42063, -1990404162, 1804603682, -40341101, -1502002290, 1236535329, -165796510, -1069501632, 643717713, -373897302, -701558691, 38016083, -660478335, -405537848, 568446438, -1019803690, -187363961, 1163531501, -1444681467, -51403784, 1735328473, -1926607734, -378558, -2022574463, 1839030562, -35309556, -1530992060, 1272893353, -155497632, -1094730640, 681279174, -358537222, -722521979, 76029189, -640364487, -421815835, 530742520, -995338651, -198630844, 1126891415, -1416354905, -57434055, 1700485571, -1894986606, -1051523, -2054922799, 1873313359, -30611744, -1560198380, 1309151649, -145523070, -1120210379, 718787259, -343485551];
+    const blocks = (x, n, f, k) => {
+      for (let i = 0; i < 16; i++) {
+        const s = [7, 12, 17, 22, 5, 9, 14, 20, 4, 11, 16, 23, 6, 10, 15, 21];
+        const g = k[i];
+        f[0] = add(f[0], r(add(add(add(f[0], f[1]), T[n + i]), x[g + (n>>5)]), s[(n>>2) + (i&3)]));
+        [f[0], f[1], f[2], f[3]] = [f[3], f[0], f[1], f[2]];
+      }
     };
-    const binl2hex = (bin) => {
-      const hex = '0123456789abcdef';
-      let str = '';
-      for(let i=0; i<bin.length*4; i++) str += hex.charAt((bin[i>>2]>>((i%4)*8+4))&0xF) + hex.charAt((bin[i>>2]>>((i%4)*8))&0xF);
-      return str;
-    };
-    const x = str2binl(unescape(encodeURIComponent(str)));
-    const len = str.length*8;
-    x[len>>5] |= 0x80 << (len%32);
-    x[((len+64>>>9)<<4)+14] = len;
-    let a=[1732584193,-271733879,-1732584194,271733878];
-    for(let i=0; i<x.length; i+=16) a=md5cycle(a,x.slice(i,i+16));
-    return binl2hex(a);
+    const K0 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+    const K1 = [1, 6, 11, 0, 5, 10, 15, 4, 9, 14, 3, 8, 13, 2, 7, 12];
+    const K2 = [5, 8, 11, 14, 1, 4, 7, 10, 13, 0, 3, 6, 9, 12, 15, 2];
+    const K3 = [0, 7, 14, 5, 12, 3, 10, 1, 8, 15, 6, 13, 4, 11, 2, 9];
+    let h = [1732584193, -271733879, -1732584194, 271733878];
+    for (let i = 0; i < x.length; i += 16) {
+      const a = h.slice();
+      const w = x.slice(i, i + 16);
+      const u = (f, k) => blocks(w, 0, a, k);
+      // Round 1-4 with FF, GG, HH, II
+      for (let j = 0; j < 16; j++) {
+        const s = [7,12,17,22][j&3];
+        a[0] = add(a[1], r(add(add(add(a[0], F(a[1],a[2],a[3])), w[K0[j]]), T[j]), s));
+        [a[0],a[1],a[2],a[3]] = [a[3],a[0],a[1],a[2]];
+      }
+      for (let j = 0; j < 16; j++) {
+        const s = [5,9,14,20][j&3];
+        a[0] = add(a[1], r(add(add(add(a[0], G(a[1],a[2],a[3])), w[K1[j]]), T[16+j]), s));
+        [a[0],a[1],a[2],a[3]] = [a[3],a[0],a[1],a[2]];
+      }
+      for (let j = 0; j < 16; j++) {
+        const s = [4,11,16,23][j&3];
+        a[0] = add(a[1], r(add(add(add(a[0], H(a[1],a[2],a[3])), w[K2[j]]), T[32+j]), s));
+        [a[0],a[1],a[2],a[3]] = [a[3],a[0],a[1],a[2]];
+      }
+      for (let j = 0; j < 16; j++) {
+        const s = [6,10,15,21][j&3];
+        a[0] = add(a[1], r(add(add(add(a[0], I(a[1],a[2],a[3])), w[K3[j]]), T[48+j]), s));
+        [a[0],a[1],a[2],a[3]] = [a[3],a[0],a[1],a[2]];
+      }
+      h = h.map((v, i) => add(v, a[i]));
+    }
+    return h.map(v => {
+      const vU = v >>> 0;
+      return [vU & 0xFF, (vU >>> 8) & 0xFF, (vU >>> 16) & 0xFF, (vU >>> 24) & 0xFF]
+        .map(b => b.toString(16).padStart(2, '0')).join('');
+    }).join('');
+  }
+      }
+      h0 = (h0 + a) >>> 0; h1 = (h1 + b) >>> 0; h2 = (h2 + c) >>> 0; h3 = (h3 + d) >>> 0;
+    }
+    return [h0,h1,h2,h3].map(v => (v>>>0).toString(16).padStart(8,'0')).join('');
   }
 };
