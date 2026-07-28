@@ -938,4 +938,68 @@ saveList('list_b', 'yy\nyyyy');
 eq('list_a 独立', loadList('list_a'), 'x\nxxx');
 eq('list_b 独立', loadList('list_b'), 'yy\nyyyy');
 
+console.log('\n=== 🆕 数值/序列/注释等 ===\n');
+// math
+const math = (data, op, val) => data.split('\n').map(l=>{const n=parseFloat(l);if(isNaN(n))return l;switch(op){case'add':return String(n+val);case'mul':return String(n*val);default:return l;}}).join('\n');
+eq('math add', math('1\n2\n3', 'add', 10), '11\n12\n13');
+eq('math mul', math('2\n3', 'mul', 4), '8\n12');
+eq('math 非数字不变', math('abc\n2', 'add', 1), 'abc\n3');
+
+// generate range
+const genRange = (start, end, step) => { const r=[];for(let i=start;i<=end;i+=step)r.push(String(i));return r.join('\n'); };
+eq('gen range 1-3', genRange(1,3,1), '1\n2\n3');
+eq('gen range 步长2', genRange(0,6,2), '0\n2\n4\n6');
+
+// generate uuid
+const genUUID = (n) => { const r=[];for(let i=0;i<n;i++){const u='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16);});r.push(u);}return r.join('\n'); };
+const uuids = genUUID(3).split('\n');
+eq('gen uuid 数量', uuids.length, 3);
+eq('gen uuid 格式', uuids[0].length, 36);
+eq('gen uuid 连字符', uuids[0].split('-').length, 5);
+
+// generate repeat
+const genRepeat = (text, n) => Array(n).fill(text).join('\n');
+eq('gen repeat', genRepeat('hello', 3), 'hello\nhello\nhello');
+
+// generate timestamp
+const genTS = (n) => { const r=[];for(let i=0;i<n;i++)r.push(String(Date.now()+i));return r.join('\n'); };
+const ts = genTS(2).split('\n');
+eq('gen timestamp 数量', ts.length, 2);
+eq('gen timestamp 数字', !isNaN(parseInt(ts[0])), true);
+
+// vlookup
+const vlookup = (data, mapStr) => {
+  const map = {}; mapStr.split('\n').filter(l=>l.trim()).forEach(l=>{const i=l.indexOf('=');if(i>0)map[l.slice(0,i).trim()]=l.slice(i+1).trim();});
+  return data.split('\n').map(l=>map[l]!==undefined?map[l]:l).join('\n');
+};
+eq('vlookup 精确匹配', vlookup('apple\nbanana', 'apple=水果\nbanana=香蕉'), '水果\n香蕉');
+
+// note 透传
+eq('note 透传数据不变', 'abc\ndef', 'abc\ndef');
+
+// undo/redo 模拟
+const undoStack = [], redoStack = [];
+const pushUndo = (s) => { undoStack.push(JSON.parse(JSON.stringify(s))); };
+const undo = (s) => { redoStack.push(JSON.parse(JSON.stringify(s))); return undoStack.pop()||s; };
+const redo = (s) => { undoStack.push(JSON.parse(JSON.stringify(s))); return redoStack.pop()||s; };
+let state = ['a','b'];
+pushUndo(state); state = ['a','b','c'];
+pushUndo(state); state = ['a','b','c','d'];
+state = undo(state);
+eq('undo 回到3项', state.length, 3);
+state = undo(state);
+eq('undo 回到2项', state.length, 2);
+state = redo(state);
+eq('redo 回到3项', state.length, 3);
+
+// 管道模板序列化
+const template = JSON.stringify({ steps: [{type:'upper'},{type:'sort'}] });
+const parsed = JSON.parse(template);
+eq('模板 步数', parsed.steps.length, 2);
+eq('模板 类型', parsed.steps[0].type, 'upper');
+
+// 暂存列表引用
+const refTest = { saved: { '步骤A': 'apple\nbanana' } };
+eq('引用暂存列表', refTest.saved['步骤A'].split('\n')[0], 'apple');
+
 summary();

@@ -5,6 +5,8 @@ const StringPipeline = {
   parsedSource: null,
   savedLists: {},
   listNames: [],
+  undoStack: [],
+  redoStack: [],
 
   init() {
     this.renderStringPipeline();
@@ -63,8 +65,12 @@ const StringPipeline = {
           <span>⛓️ 处理管道</span>
           <span class="badge badge-info" id="sp-step-count">0 步</span>
           <div class="ml-auto" style="display:flex;gap:4px">
+            <button class="btn btn-sm" onclick="StringPipeline.undo()" title="撤销 Ctrl+Z">↩</button>
+            <button class="btn btn-sm" onclick="StringPipeline.redo()" title="重做">↪</button>
+            <button class="btn btn-sm" onclick="StringPipeline.saveTemplate()">📦 保存模板</button>
+            <button class="btn btn-sm" onclick="StringPipeline.loadTemplate()">📂 加载模板</button>
             <button class="btn btn-sm btn-primary" onclick="StringPipeline.execute()">▶️ 执行全部</button>
-            <button class="btn btn-sm" onclick="StringPipeline.clearSteps()">🗑️ 清空所有步骤</button>
+            <button class="btn btn-sm" onclick="StringPipeline.clearSteps()">🗑️ 清空</button>
           </div>
         </div>
         <div class="card-body" id="sp-steps-container">
@@ -238,6 +244,14 @@ const StringPipeline = {
               <optgroup label="📐 其他变换">
                 <option value="fold">fold 固定宽度折行</option>
                 <option value="unexpand">unexpand 空格转制表符</option>
+                <option value="note">📝 步骤注释</option>
+              </optgroup>
+              <optgroup label="🔢 数值/序列">
+                <option value="math">🔢 数值运算</option>
+                <option value="generate">🔢 生成序列</option>
+              </optgroup>
+              <optgroup label="🔗 多列表交互">
+                <option value="vlookup">vlookup 跨列表匹配</option>
               </optgroup>
             </select>
             <button class="btn btn-primary" onclick="StringPipeline.addStep()">+ 添加步骤</button>
@@ -290,11 +304,13 @@ const StringPipeline = {
   addStep() {
     const type = document.getElementById('sp-add-step-type').value;
     const id = ++this.stepIdCounter;
+    this.pushUndo();
     this.steps.push({ id, type });
     this.renderSteps();
   },
 
   removeStep(id) {
+    this.pushUndo();
     this.steps = this.steps.filter(s => s.id !== id);
     this.renderSteps();
   },
@@ -304,11 +320,66 @@ const StringPipeline = {
     if (idx === -1) return;
     const newIdx = idx + direction;
     if (newIdx < 0 || newIdx >= this.steps.length) return;
+    this.pushUndo();
     [this.steps[idx], this.steps[newIdx]] = [this.steps[newIdx], this.steps[idx]];
     this.renderSteps();
   },
 
-  clearSteps() { this.steps = []; this.renderSteps(); },
+  clearSteps() {
+    this.pushUndo();
+    this.steps = [];
+    this.renderSteps();
+  },
+  /* ===== 撤销/重做 ===== */
+  pushUndo() {
+    if (this.steps.length > 0 || this.undoStack.length === 0) {
+      this.undoStack.push(JSON.parse(JSON.stringify(this.steps)));
+    }
+    if (this.undoStack.length > 50) this.undoStack.shift();
+    this.redoStack = [];
+  },
+  undo() {
+    if (this.undoStack.length === 0) { this.showToast('没有可撤销的操作'); return; }
+    this.redoStack.push(JSON.parse(JSON.stringify(this.steps)));
+    this.steps = this.undoStack.pop();
+    this.renderSteps();
+    this.showToast('已撤销');
+  },
+  redo() {
+    if (this.redoStack.length === 0) { this.showToast('没有可重做的操作'); return; }
+    this.undoStack.push(JSON.parse(JSON.stringify(this.steps)));
+    this.steps = this.redoStack.pop();
+    this.renderSteps();
+    this.showToast('已重做');
+  },
+  /* ===== 管道模板 ===== */
+  saveTemplate() {
+    const cfg = JSON.stringify({ steps: this.steps.map(s => ({ type: s.type })) }, null, 2);
+    const blob = new Blob([cfg], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'pipeline-template.json'; a.click();
+    URL.revokeObjectURL(url);
+    this.showToast('模板已导出');
+  },
+  loadTemplate() {
+    const input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
+    input.onchange = e => {
+      const file = e.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          const cfg = JSON.parse(ev.target.result);
+          if (!cfg.steps || !Array.isArray(cfg.steps)) { this.showToast('无效的模板文件'); return; }
+          this.pushUndo();
+          this.steps = cfg.steps.map(s => ({ ...s, id: ++this.stepIdCounter }));
+          this.renderSteps();
+          this.showToast(`已加载模板: ${cfg.steps.length} 步`);
+        } catch (e) { this.showToast('模板解析失败: '+e.message); }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  },
   clearInput() {
     document.getElementById('sp-input').value = '';
     document.getElementById('sp-input-status').textContent = '0 行';
@@ -386,7 +457,7 @@ const StringPipeline = {
   },
   populateSavedRefs() {
     const names = this.getListNames();
-    document.querySelectorAll('.sp-comm-ref, .sp-zip-ref, .sp-lookup-ref, .sp-load-name').forEach(sel => {
+    document.querySelectorAll('.sp-comm-ref, .sp-zip-ref, .sp-lookup-ref, .sp-load-name, .sp-vl-ref').forEach(sel => {
       const current = sel.value;
       sel.innerHTML = '<option value="">-- 选择暂存列表 --</option>' +
         names.map(n => `<option value="${n}" ${n===current?'selected':''}>${n}</option>`).join('');
@@ -707,6 +778,26 @@ const StringPipeline = {
         <input class="sp-win-sep" placeholder="组间分隔" value="---" style="width:70px">
         <span class="hint">滑动窗口: 每size行一组, 步长step</span>`,
       'dedupe-consecutive': `<span class="hint">删除连续重复的行(仅相邻重复的去重)</span>`,
+      note: `<input class="sp-note-text" placeholder="在此输入步骤说明..." style="width:100%"><span class="hint">对当前步骤添加备注说明，不影响数据</span>`,
+      math: `<select class="sp-math-op">
+        <option value="add">+ 加</option><option value="sub">- 减</option>
+        <option value="mul">× 乘</option><option value="div">÷ 除</option>
+        <option value="round">round 四舍五入</option><option value="floor">floor 向下取整</option>
+        <option value="ceil">ceil 向上取整</option><option value="pow">pow 幂</option><option value="abs">abs 绝对值</option>
+      </select>
+      <input class="sp-math-val" type="number" placeholder="数值" value="1" style="width:80px">`,
+      generate: `<select class="sp-gen-type">
+        <option value="range">range 范围(a→b)</option>
+        <option value="repeat">repeat 重复文本</option>
+        <option value="uuid">UUID v4</option>
+        <option value="timestamp">时间戳</option>
+      </select>
+      <input class="sp-gen-start" placeholder="起始/内容" value="1" style="width:80px">
+      <input class="sp-gen-end" placeholder="结束/行数" value="10" style="width:80px">
+      <input class="sp-gen-step" placeholder="步长" value="1" style="width:60px">`,
+      vlookup: `<textarea class="sp-vl-data" placeholder="查找表&#10;值=结果 (每行一项)" style="width:160px;height:40px;font-size:11px"></textarea>
+        <select class="sp-vl-ref" onchange="StringPipeline.onCommRefChange(this,'vlookup')"><option value="">-- 或引用暂存列表 --</option></select>
+        <span class="hint">当前行的值如果在查找表中存在，替换为结果</span>`,
     }; // ← end of cfg
     return cfg[type] || '';
   },
@@ -780,6 +871,8 @@ const StringPipeline = {
       'regex-test':'regex-test 正则检测', count:'count 聚合统计',
       pivot:'pivot 行转列', unpivot:'unpivot 列转行',
       window:'window 滑动窗口', 'dedupe-consecutive':'去连续重复',
+      note:'📝 步骤注释', math:'🔢 数值运算', generate:'🔢 生成序列',
+      vlookup:'vlookup 跨列表匹配',
       /* 更多语言/库 */
       'collapse-spaces':'collapseSpaces 合并空白', 'split-lines':'splitlines 智能拆分',
       translate:'translate/tr 字符映射', 'remove-chars':'removeChars 删除字符',
@@ -803,10 +896,16 @@ const StringPipeline = {
     }
     let html = '';
     this.steps.forEach((step, idx) => {
-      html += `<div class="sp-step" data-id="${step.id}">
+      const noteEl = document.querySelector(`.sp-step[data-id="${step.id}"] .sp-note-text`);
+      const noteVal = noteEl?.value || '';
+      html += `<div class="sp-step" data-id="${step.id}" draggable="true"
+        ondragstart="StringPipeline.onDragStart(event, ${step.id})"
+        ondragover="event.preventDefault()"
+        ondrop="StringPipeline.onDrop(event, ${step.id})">
         <div class="sp-step-header">
-          <span class="sp-step-num">${idx+1}.</span>
+          <span class="sp-step-num" style="cursor:grab">⠿ ${idx+1}.</span>
           <span class="sp-step-label">${this.getStepLabel(step.type)}</span>
+          ${step.type==='note'?`<span class="text-muted" style="font-size:11px">${this.escapeAttr(noteVal||'')}</span>`:''}
           <div class="sp-step-actions">
             <button class="btn btn-xs" onclick="StringPipeline.moveStep(${step.id},-1)" ${idx===0?'disabled':''}>↑</button>
             <button class="btn btn-xs" onclick="StringPipeline.moveStep(${step.id},1)" ${idx===this.steps.length-1?'disabled':''}>↓</button>
@@ -823,6 +922,26 @@ const StringPipeline = {
     container.innerHTML = html;
     this.populateSavedRefs();
   },
+
+  onDragStart(event, id) {
+    event.dataTransfer.setData('text/plain', String(id));
+    event.dataTransfer.effectAllowed = 'move';
+    event.target.style.opacity = '0.5';
+  },
+  onDrop(event, targetId) {
+    event.preventDefault();
+    event.target.closest('.sp-step').style.opacity = '';
+    const sourceId = parseInt(event.dataTransfer.getData('text/plain'));
+    if (sourceId === targetId) return;
+    const srcIdx = this.steps.findIndex(s => s.id === sourceId);
+    const tgtIdx = this.steps.findIndex(s => s.id === targetId);
+    if (srcIdx < 0 || tgtIdx < 0) return;
+    this.pushUndo();
+    const [removed] = this.steps.splice(srcIdx, 1);
+    this.steps.splice(tgtIdx > srcIdx ? tgtIdx : tgtIdx, 0, removed);
+    this.renderSteps();
+  },
+  escapeAttr(str) { return str.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); },
 
   togglePreview(id) {
     const c = document.getElementById(`sp-preview-content-${id}`);
@@ -934,6 +1053,10 @@ const StringPipeline = {
       case 'unpivot': { const delim=$('.sp-unpivot-delim')?.value||',';return data.split('\n').flatMap(l=>l.split(delim)).join('\n'); }
       case 'window': { const size=parseInt($('.sp-win-size')?.value)||3,step=parseInt($('.sp-win-step')?.value)||1,sep=$('.sp-win-sep')?.value||'---';const lines=data.split('\n');const r=[];for(let i=0;i<lines.length-size+1;i+=step)r.push(lines.slice(i,i+size).join('\n'));return r.join('\n'+sep+'\n'); }
       case 'dedupe-consecutive': { return data.split('\n').filter((l,i,arr)=>i===0||l!==arr[i-1]).join('\n'); }
+      case 'note': return data;
+      case 'math': { const op=$('.sp-math-op')?.value||'add',val=parseFloat($('.sp-math-val')?.value)||0;return data.split('\n').map(l=>{const n=parseFloat(l);if(isNaN(n))return l;switch(op){case'add':return String(n+val);case'sub':return String(n-val);case'mul':return String(n*val);case'div':return val!==0?String(n/val):l;case'round':return String(Math.round(n));case'floor':return String(Math.floor(n));case'ceil':return String(Math.ceil(n));case'pow':return String(Math.pow(n,val));case'abs':return String(Math.abs(n));default:return l;}}).join('\n'); }
+      case 'generate': { const t=$('.sp-gen-type')?.value||'range',start=$('.sp-gen-start')?.value||'1',end=parseInt($('.sp-gen-end')?.value)||10,step=parseInt($('.sp-gen-step')?.value)||1;if(t==='range'){const s=parseInt(start)||1;const r=[];for(let i=s;i<=end;i+=step)r.push(String(i));return r.join('\n');}if(t==='repeat'){return Array(end).fill(start).join('\n');}if(t==='uuid'){const r=[];for(let i=0;i<end;i++){const u='xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16);});r.push(u);}return r.join('\n');}if(t==='timestamp'){const r=[];for(let i=0;i<end;i++)r.push(String(Date.now()+i*step));return r.join('\n');}return data; }
+      case 'vlookup': { const mapStr=this.getRefOrTextarea(step,'.sp-vl-data','.sp-vl-ref');if(!mapStr.trim())return data;const map={};mapStr.split('\n').filter(l=>l.trim()).forEach(l=>{const i=l.indexOf('=');if(i>0){map[l.slice(0,i).trim()]=l.slice(i+1).trim();}else if(l.includes(',')){const c=l.split(',');map[c[0].trim()]=c.slice(1).join(',').trim();}});return data.split('\n').map(l=>{if(map[l]!==undefined)return map[l];for(const [k,v] of Object.entries(map)){if(l.includes(k))return l.replace(k,v);}return l;}).join('\n'); }
       default: return data;
     }
   },

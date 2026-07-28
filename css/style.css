@@ -845,3 +845,14 @@ tr:hover {
 .btn-xs.btn-danger:hover {
   background: var(--red-bg);
 }
+
+/* 步骤拖拽 */
+.sp-step[draggable="true"] { cursor: default; }
+.sp-step[draggable="true"] .sp-step-header { cursor: grab; }
+.sp-step[draggable="true"]:active .sp-step-header { cursor: grabbing; }
+.sp-step[draggable="true"]:active { opacity: 0.7; border-color: var(--accent); }
+.sp-step.drag-over { border-color: var(--accent); box-shadow: var(--shadow-lg); }
+.sp-step .sp-note-text { border: none; background: var(--sidebar-bg); font-size: 0.8125rem; padding: 2px 6px; border-radius: var(--radius-sm); width: 100%; min-width: 120px; }
+.sp-saved-item { margin-bottom: 0.5rem; border-left: 3px solid var(--green); padding-left: 0.5rem; }
+.sp-saved-header { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8125rem; }
+.sp-saved-name { font-weight: 600; cursor: pointer; }
