@@ -883,4 +883,50 @@ eq('dedupe 无重复', dedupe('a\nb\nc'), 'a\nb\nc');
 
 console.log('扩展操作全部通过');
 
+console.log('\n=== 💾 暂存列表/多列表交互 ===\n');
+// save/load 暂存
+const savedLists = {};
+const saveList = (name, data) => { savedLists[name.trim()] = data; };
+const loadList = (name) => savedLists[name] || null;
+saveList('fruits', 'apple\nbanana\ncherry');
+saveList('numbers', '1\n2\n3');
+eq('save 保存成功', loadList('fruits'), 'apple\nbanana\ncherry');
+eq('load 加载正确', loadList('numbers'), '1\n2\n3');
+eq('load 不存在的返回null', loadList('nonexist'), null);
+
+// comm 引用暂存列表
+const commWithRef = (dataA, refName, mode) => {
+  const listB = (loadList(refName) || '').split('\n').filter(l=>l.trim());
+  const a = dataA.split('\n').filter(l=>l.trim()); const sb = new Set(listB);
+  const ao = a.filter(l=>!sb.has(l)), both = a.filter(l=>sb.has(l));
+  if(mode==='a-only')return ao.join('\n'); if(mode==='both')return both.join('\n');
+  return '';
+};
+eq('comm 引用暂存 a-only', commWithRef('apple\ndurian', 'fruits', 'a-only'), 'durian');
+eq('comm 引用暂存 both', commWithRef('apple\ndurian', 'fruits', 'both'), 'apple');
+
+// zip 引用暂存列表
+const zipWithRef = (dataA, refName, sep) => {
+  const listB = (loadList(refName) || '').split('\n').filter(l=>l.trim());
+  const a = dataA.split('\n').filter(l=>l.trim());
+  const len = Math.min(a.length, listB.length);
+  return Array.from({length:len},(_,i)=>a[i]+sep+listB[i]).join('\n');
+};
+eq('zip 引用暂存', zipWithRef('a\nb', 'numbers', '|'), 'a|1\nb|2');
+
+// lookup 引用暂存列表
+const lookupWithRef = (data, refName) => {
+  const mapStr = loadList(refName) || '';
+  const map = {}; mapStr.split('\n').filter(l=>l.trim()).forEach(l=>{const i=l.indexOf('=');if(i>0){map[l.slice(0,i).trim()]=l.slice(i+1).trim();}});
+  return data.split('\n').map(l=>map[l]!==undefined?map[l]:l).join('\n');
+};
+saveList('mapping', 'apple=苹果\nbanana=香蕉');
+eq('lookup 引用暂存', lookupWithRef('apple\ncherry', 'mapping'), '苹果\ncherry');
+
+// 多列表独立操作: 每个列表有自有数据, 互不干扰
+saveList('list_a', 'x\nxxx');
+saveList('list_b', 'yy\nyyyy');
+eq('list_a 独立', loadList('list_a'), 'x\nxxx');
+eq('list_b 独立', loadList('list_b'), 'yy\nyyyy');
+
 summary();

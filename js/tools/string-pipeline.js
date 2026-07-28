@@ -3,6 +3,8 @@ const StringPipeline = {
   stepIdCounter: 0,
   peekLogs: [],
   parsedSource: null,
+  savedLists: {},
+  listNames: [],
 
   init() {
     this.renderStringPipeline();
@@ -183,6 +185,8 @@ const StringPipeline = {
               </optgroup>
               <optgroup label="👁️ 调试">
                 <option value="peek">Peek 窥视</option>
+                <option value="save">💾 保存为 (save) 暂存中间值</option>
+                <option value="load">📂 加载列表 (load)</option>
               </optgroup>
               <optgroup label="🏛️ Commons/Spring StringUtils">
                 <option value="delete-whitespace">deleteWhitespace 删除所有空白</option>
@@ -254,6 +258,19 @@ const StringPipeline = {
         </div>
       </div>
 
+      <div class="card" id="sp-saved-card">
+        <div class="card-header">
+          <span>📂 暂存列表</span>
+          <span class="badge badge-info" id="sp-saved-count">0</span>
+          <div class="ml-auto" style="display:flex;gap:4px">
+            <button class="btn btn-sm" onclick="StringPipeline.clearSaved()">🗑️ 清空全部</button>
+          </div>
+        </div>
+        <div class="card-body" id="sp-saved-body">
+          <div class="empty-state">使用管道中的"💾 保存为"步骤暂存中间结果</div>
+        </div>
+      </div>
+
       <div class="card" id="sp-intermediate-card" style="display:none">
         <div class="card-header">📋 中间结果 & 日志</div>
         <div class="card-body" id="sp-intermediate-body"></div>
@@ -297,6 +314,89 @@ const StringPipeline = {
     document.getElementById('sp-input').value = '';
     document.getElementById('sp-input-status').textContent = '0 行';
     this.showToast('已清空');
+  },
+  /* ===== 暂存列表管理 ===== */
+  getListNames() { return Object.keys(this.savedLists); },
+  getListData(name) { return this.savedLists[name]; },
+  saveList(name, data) {
+    if (!name.trim()) { this.showToast('请输入保存名称'); return; }
+    this.savedLists[name.trim()] = data;
+    this.renderSavedLists();
+    this.populateSavedRefs();
+    this.showToast(`已保存: ${name.trim()} (${data.split('\n').length} 行)`);
+  },
+  loadList(name) {
+    const data = this.savedLists[name];
+    if (data === undefined) { this.showToast(`未找到列表: ${name}`); return null; }
+    return data;
+  },
+  clearSaved() {
+    if (Object.keys(this.savedLists).length === 0) return;
+    if (!confirm('确认清空所有暂存列表？')) return;
+    this.savedLists = {};
+    this.renderSavedLists();
+    this.populateSavedRefs();
+    this.showToast('已清空全部暂存列表');
+  },
+  deleteSaved(name) {
+    delete this.savedLists[name];
+    this.renderSavedLists();
+    this.populateSavedRefs();
+  },
+  renderSavedLists() {
+    const body = document.getElementById('sp-saved-body');
+    const count = document.getElementById('sp-saved-count');
+    if (!body) return;
+    const names = this.getListNames();
+    count.textContent = String(names.length);
+    if (names.length === 0) {
+      body.innerHTML = '<div class="empty-state">使用管道中的"💾 保存为"步骤暂存中间结果</div>';
+      return;
+    }
+    let html = '';
+    for (const name of names) {
+      const data = this.savedLists[name];
+      const lines = data.split('\n');
+      const preview = lines.length > 5 ? lines.slice(0,5).join('\n') + `\n...` : data;
+      html += `<div class="sp-saved-item">
+        <div class="sp-saved-header">
+          <span class="sp-saved-name" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">📁 ${name}</span>
+          <span class="text-muted" style="font-size:11px">${lines.length} 行, ${data.length} 字符</span>
+          <button class="btn btn-xs" onclick="StringPipeline.copySaved('${name}')">📋</button>
+          <button class="btn btn-xs btn-danger" onclick="StringPipeline.deleteSaved('${name}')">✕</button>
+        </div>
+        <pre class="code-block light" style="display:none;max-height:100px;overflow:auto;font-size:11px;margin-top:4px">${StringPipelineUtils.escapeHtml(preview)}</pre>
+      </div>`;
+    }
+    body.innerHTML = html;
+  },
+  copySaved(name) {
+    const data = this.savedLists[name];
+    if (!data) return;
+    navigator.clipboard.writeText(data).then(() => this.showToast(`已复制: ${name}`));
+  },
+  populateSavedRefs() {
+    const names = this.getListNames();
+    document.querySelectorAll('.sp-comm-ref, .sp-zip-ref, .sp-lookup-ref, .sp-load-name').forEach(sel => {
+      const current = sel.value;
+      sel.innerHTML = '<option value="">-- 选择暂存列表 --</option>' +
+        names.map(n => `<option value="${n}" ${n===current?'selected':''}>${n}</option>`).join('');
+    });
+  },
+  onCommRefChange(sel, prefix) {
+    const ref = sel.value;
+    const container = sel.parentElement;
+    const textarea = container.querySelector('.sp-comm-list, .sp-zip-data, .sp-lookup-map');
+    if (textarea) textarea.style.display = ref ? 'none' : '';
+  },
+  getRefOrTextarea(step, selector, refSelector) {
+    const refEl = document.querySelector(`.sp-step[data-id="${step.id}"]`)?.querySelector(refSelector);
+    if (refEl && refEl.value) {
+      const data = this.loadList(refEl.value);
+      if (data) return data;
+    }
+    const ta = document.querySelector(`.sp-step[data-id="${step.id}"]`)?.querySelector(selector);
+    return ta?.value || '';
   },
   getCSVDelimiter() {
     const sel = document.getElementById('sp-csv-delimiter').value;
@@ -448,6 +548,8 @@ const StringPipeline = {
       sample: `<input class="sp-sample-n" type="number" value="5" min="1" style="width:70px"><span class="hint">随机抽取 N 行</span>`,
       pick: `<input class="sp-pick-range" placeholder="范围" value="1-5" style="width:100px"><span class="hint">如 1-5, 或 1,3,5</span>`,
       peek: `<span class="hint">👁️ 窥视: 执行到此步时将中间数据显示在日志中</span>`,
+      save: `<input class="sp-save-name" placeholder="保存名称(如 list_a)" style="width:140px"><span class="hint">将当前数据暂存，后续可用"加载列表"引用</span>`,
+      load: `<select class="sp-load-name"></select><span class="hint">加载之前保存的列表数据到当前管道</span>`,
       groupby: `<select class="sp-groupby-mode">
         <option value="firstChar">首字母分组</option><option value="length">按长度分组</option>
         <option value="exact">精确匹配分组</option></select>`,
@@ -480,6 +582,7 @@ const StringPipeline = {
         <input class="sp-intl-every" type="number" value="3" min="1" style="width:60px"><span class="hint">每N行插入一次</span>`,
       zip: `<textarea class="sp-zip-data" placeholder="粘贴第二个列表，每行一项" style="width:200px;height:40px;font-size:11px"></textarea>
         <input class="sp-zip-sep" placeholder="连接符" value=" " style="width:60px">
+        <select class="sp-zip-ref" onchange="StringPipeline.onCommRefChange(this,'zip')"><option value="">-- 或引用暂存列表 --</option></select>
         <span class="hint">两个列表交错合并</span>`,
       batch: `<input class="sp-batch-size" type="number" value="3" min="1" style="width:60px">
         <input class="sp-batch-sep" placeholder="组间分隔符" value="---" style="width:70px">
@@ -566,10 +669,12 @@ const StringPipeline = {
         <input class="sp-oi-n" type="number" placeholder="第N次" value="2" min="1" style="width:60px">
         <span class="hint">StringUtils.ordinalIndexOf — 第N次出现的位置，输出: "行内容 | N"</span>`,
       /* ===== 扩展操作 ===== */
-      lookup: `<textarea class="sp-lookup-map" placeholder="映射表&#10;原值→新值(每行一项)" style="width:200px;height:40px;font-size:11px"></textarea>
-        <span class="hint">查找替换，如 "旧值=新值" 每行一项</span>`,
+      lookup: `<textarea class="sp-lookup-map" placeholder="映射表&#10;原值=新值(每行一项)" style="width:200px;height:40px;font-size:11px"></textarea>
+        <select class="sp-lookup-ref" onchange="StringPipeline.onCommRefChange(this,'lookup')"><option value="">-- 或引用暂存列表 --</option></select>
+        <span class="hint">查找替换，如 "旧值=新值" 或引用暂存列表</span>`,
       comm: `<textarea class="sp-comm-list" placeholder="第二个列表&#10;每行一项" style="width:140px;height:40px;font-size:11px"></textarea>
-        <select class="sp-comm-mode"><option value="all">全部(A独有+共有+B独有)</option><option value="a-only">仅在A中</option><option value="b-only">仅在B中</option><option value="both">两者共有</option></select>`,
+        <select class="sp-comm-mode"><option value="all">全部(A独有+共有+B独有)</option><option value="a-only">仅在A中</option><option value="b-only">仅在B中</option><option value="both">两者共有</option></select>
+        <select class="sp-comm-ref" onchange="StringPipeline.onCommRefChange(this)"><option value="">-- 或引用暂存列表 --</option></select>`,
       fold: `<input class="sp-fold-width" type="number" value="20" min="1" style="width:60px">
         <span class="hint">在精确列位置折行(不保留单词完整性)</span>`,
       unexpand: `<input class="sp-unexpand-size" type="number" value="4" min="2" style="width:60px">
@@ -621,7 +726,7 @@ const StringPipeline = {
       'drop-while':'DropWhile', repeat:'🔁 重复',
       limit:'✂️ Limit', last:'取后N行', skip:'⏭️ Skip',
       sample:'🎲 随机抽样', pick:'🔢 选取行',
-      peek:'👁️ Peek', groupby:'📊 GroupBy', reduce:'📦 Reduce',
+      peek:'👁️ Peek', save:'💾 保存为', load:'📂 加载列表', groupby:'📊 GroupBy', reduce:'📦 Reduce',
       substring:'✂️ 截取子串', pad:'📏 填充', 'pad-zeros':'零填充',
       center:'居中对齐', truncate:'✂️ 截断',
       'truncate-words':'按单词截断', template:'📝 模板映射',
@@ -708,6 +813,7 @@ const StringPipeline = {
       </div>`;
     });
     container.innerHTML = html;
+    this.populateSavedRefs();
   },
 
   togglePreview(id) {
@@ -790,6 +896,8 @@ const StringPipeline = {
       case 'sample': { const n=parseInt($('.sp-sample-n')?.value)||5;const arr=data.split('\n').filter(l=>l.trim());const s=[];const len=Math.min(n,arr.length);const idx=new Set();while(idx.size<len)idx.add(Math.floor(Math.random()*arr.length));return arr.filter((_,i)=>idx.has(i)).join('\n'); }
       case 'pick': { const r=$('.sp-pick-range')?.value||'1-5';const idx=StringPipelineUtils.parseColumns(r);const lines=data.split('\n');return idx.map(i=>lines[i-1]||'').filter(l=>l!==undefined).join('\n'); }
       case 'peek': { const lines=data.split('\n');const pv=lines.length>15?lines.slice(0,15).join('\n')+`\n... (共 ${lines.length} 行)`:data;this.peekLogs.push(`👁️ Peek (${lines.length}行, ${data.length}字符):\n${pv}`);return data; }
+      case 'save': { const name=$('.sp-save-name')?.value||'';if(name)this.saveList(name,data);return data; }
+      case 'load': { const name=$('.sp-load-name')?.value||'';const d=this.loadList(name);return d!==null?d:data; }
       case 'groupby': { const m=$('.sp-groupby-mode')?.value||'firstChar';const lines=data.split('\n').filter(l=>l.trim());const g={};for(const l of lines){let k;switch(m){case'firstChar':k=(l[0]||'').toUpperCase()||'(empty)';break;case'length':k=`len=${l.length}`;break;case'exact':k=l;break;default:k=l;}if(!g[k])g[k]=[];g[k].push(l);}return Object.entries(g).map(([k,items])=>`# ${k} (${items.length} 项)\n${items.join('\n')}`).join('\n\n'); }
       case 'reduce': { const op=$('.sp-reduce-op')?.value||'join',sep=$('.sp-reduce-sep')?.value||', ';const lines=data.split('\n').filter(l=>l.trim());const nums=lines.map(v=>parseFloat(v)).filter(v=>!isNaN(v));switch(op){case'join':return lines.join(sep);case'count':return `Count: ${lines.length}`;case'sum':return `Sum: ${nums.reduce((a,b)=>a+b,0)}`;case'min':return `Min: ${nums.length>0?Math.min(...nums):'N/A'}`;case'max':return `Max: ${nums.length>0?Math.max(...nums):'N/A'}`;default:return data;} }
       case 'substring': { const s=parseInt($('.sp-sub-start')?.value)||0;const e=$('.sp-sub-end')?.value;return data.split('\n').map(l=>e?l.substring(s,parseInt(e)):l.substring(s)).join('\n'); }
@@ -801,89 +909,10 @@ const StringPipeline = {
       case 'template': { const f=$('.sp-tpl-fmt')?.value||'{val}';const lines=data.split('\n'),t=lines.length;return lines.map((l,i)=>f.replace(/\{val\}/g,l).replace(/\{i\}/g,String(i+1)).replace(/\{n\}/g,String(t))).join('\n'); }
       case 'extract': { const p=$('.sp-extract-pat')?.value||'',m=$('.sp-extract-mode')?.value||'match';const r=new RegExp(p,'g');const lines=data.split('\n');const res=[];if(m==='match'){for(const l of lines){const ms=l.match(r);if(ms)res.push(...ms);}}else{const sr=new RegExp(p);for(const l of lines){const mat=l.match(sr);if(mat&&mat[1]!==undefined)res.push(mat[1]);}}return res.join('\n'); }
       case 'interleave': { const t=$('.sp-intl-text')?.value||'',e=parseInt($('.sp-intl-every')?.value)||3;const lines=data.split('\n');const r=[];lines.forEach((l,i)=>{r.push(l);if((i+1)%e===0&&i<lines.length-1)r.push(t);});return r.join('\n'); }
-      case 'zip': { const zipData=$('.sp-zip-data')?.value||'',sep=$('.sp-zip-sep')?.value||' ';const listB=zipData.split('\n').filter(l=>l.trim());const listA=data.split('\n').filter(l=>l.trim());const len=Math.min(listA.length,listB.length);return Array.from({length:len},(_,i)=>listA[i]+sep+listB[i]).join('\n'); }
-      case 'batch': { const size=parseInt($('.sp-batch-size')?.value)||3,sep=$('.sp-batch-sep')?.value||'---';const lines=data.split('\n');const groups=[];for(let i=0;i<lines.length;i+=size)groups.push(lines.slice(i,i+size).join('\n'));return groups.join('\n'+sep+'\n'); }
-      case 'chunk': { const size=parseInt($('.sp-chunk-size')?.value)||5;return data.split('\n').flatMap(l=>{const r=[];for(let i=0;i<l.length;i+=size)r.push(l.slice(i,i+size));return r;}).join('\n'); }
-      case 'word-wrap': { const w=parseInt($('.sp-ww-width')?.value)||20;return data.split('\n').flatMap(l=>{const r=[];let cur='';for(const word of l.split(/\s+/)){if(!word)continue;if(cur.length+word.length+(cur?1:0)>w){if(cur)r.push(cur);cur=word;}else cur=cur?cur+' '+word:word;}if(cur)r.push(cur);return r;}).join('\n'); }
-      case 'mask': { const m=$('.sp-mask-mode')?.value||'end',c=$('.sp-mask-char')?.value||'*',k=parseInt($('.sp-mask-keep')?.value)||4;return data.split('\n').map(l=>{switch(m){case'end':if(l.length<=k)return c.repeat(l.length);return l.slice(0,k)+c.repeat(l.length-k);case'start':if(l.length<=k)return c.repeat(l.length);return c.repeat(l.length-k)+l.slice(l.length-k);case'middle':if(l.length<=k+2)return c.repeat(l.length);const half=Math.floor(k/2);return l.slice(0,half)+c.repeat(l.length-k)+l.slice(l.length-half);case'email':{const at=l.indexOf('@');if(at<1)return l;return l[0]+c.repeat(at-1)+l.slice(at);}default:return l;}}).join('\n'); }
-      case 'remove-quotes': return data.split('\n').map(l=>l.replace(/^['"]|['"]$/g,'')).join('\n');
-      case 'slugify': return data.split('\n').map(l=>l.toLowerCase().trim().replace(/[^\w\s-]/g,'').replace(/[\s_]+/g,'-').replace(/^-+|-+$/g,'')).join('\n');
-      case 'to-ascii': return data.split('\n').map(l=>l.normalize('NFD').replace(/[\u0300-\u036f]/g,'')).join('\n');
-      case 'replace-line-endings': { const m=$('.sp-rle-mode')?.value||'lf';const target=m==='crlf'?'\r\n':m==='cr'?'\r':'\n';return data.replace(/\r\n|\r|\n/g,target); }
-      case 'count-occ': { const sub=$('.sp-count-sub')?.value||'';if(!sub)return data;return data.split('\n').map(l=>{const c=(l.match(new RegExp(StringPipelineUtils.escapeRegex(sub),'g'))||[]).length;return `${l} | ${c}`;}).join('\n'); }
-      case 'frequency': { const lines=data.split('\n').filter(l=>l.trim());const freq={};for(const l of lines)freq[l]=(freq[l]||0)+1;return Object.entries(freq).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`${v} | ${k}`).join('\n'); }
-      case 'top': { const n=parseInt($('.sp-top-n')?.value)||5;const lines=data.split('\n').filter(l=>l.trim());const freq={};for(const l of lines)freq[l]=(freq[l]||0)+1;return Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,n).map(([k,v])=>`${v} | ${k}`).join('\n'); }
-      case 'base64-encode': return btoa(unescape(encodeURIComponent(data)));
-      case 'base64-decode': return decodeURIComponent(escape(atob(data)));
-      case 'url-encode': return encodeURIComponent(data);
-      case 'url-decode': return decodeURIComponent(data);
-      case 'html-encode': return data.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-      case 'html-decode': return data.replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&#x27;/g,"'").replace(/&#x2F;/g,'/');
-      case 'encode-hex': return data.split('').map(c=>c.charCodeAt(0).toString(16).padStart(2,'0')).join('');
-      case 'decode-hex': return data.replace(/\s/g,'').split(/([0-9a-fA-F]{2})/g).filter(Boolean).map(h=>String.fromCharCode(parseInt(h,16))).join('');
-      case 'escape': { const lang=$('.sp-escape-lang')?.value||'js';return StringPipelineUtils.escapeStr(data,lang); }
-      case 'unescape': { const lang=$('.sp-escape-lang')?.value||'js';return StringPipelineUtils.unescapeStr(data,lang); }
-      case 'json-escape': return JSON.stringify(data).slice(1,-1);
-      case 'json-unescape': { try{return JSON.parse('"'+data.replace(/\\"/g,'"').replace(/^"|"$/g,'')+'"');}catch{return data;} }
-      case 'unicode-escape': return data.split('').map(c=>{const code=c.charCodeAt(0);return code>127?'\\u'+code.toString(16).padStart(4,'0'):c;}).join('');
-      case 'rot13': return data.replace(/[a-zA-Z]/g,c=>{const base=c.charCodeAt(0)>=97?97:65;return String.fromCharCode((c.charCodeAt(0)-base+13)%26+base);});
-      case 'hash': { const algo=$('.sp-hash-algo')?.value||'md5';return StringPipelineUtils.hash(data,algo); }
-      case 'column-select': { const d=$('.sp-cs-delim')?.value||',',c=$('.sp-cs-cols')?.value||'1';const cols=StringPipelineUtils.parseColumns(c);return data.split('\n').map(l=>{const cells=l.split(d);return cols.map(c=>(cells[c-1]||'')).join(d);}).join('\n'); }
-      /* ===== Commons / Spring StringUtils ===== */
-      case 'delete-whitespace': return data.replace(/\s+/g,'');
-      case 'trim-leading': return data.split('\n').map(l=>l.replace(/^\s+/,'')).join('\n');
-      case 'trim-trailing': return data.split('\n').map(l=>l.replace(/\s+$/,'')).join('\n');
-      case 'strip-start': { const c=$('.sp-stripstart-char')?.value||' ';const re=new RegExp(`^[${StringPipelineUtils.escapeRegex(c)}]+`);return data.split('\n').map(l=>l.replace(re,'')).join('\n'); }
-      case 'strip-end': { const c=$('.sp-stripend-char')?.value||' ';const re=new RegExp(`[${StringPipelineUtils.escapeRegex(c)}]+$`);return data.split('\n').map(l=>l.replace(re,'')).join('\n'); }
-      case 'replace-once': { const f=$('.sp-ro-find')?.value||'',t=$('.sp-ro-to')?.value||'';return data.replace(f,t); }
-      case 'replace-each': { const f=$('.sp-re-find')?.value.split('\n').filter(Boolean),t=$('.sp-re-to')?.value.split('\n').filter(Boolean);let r=data;for(let i=0;i<f.length;i++)if(t[i]!==undefined)r=r.replaceAll(f[i],t[i]);return r; }
-      case 'overlay': { const s=$('.sp-ov-str')?.value||'',start=parseInt($('.sp-ov-start')?.value)||0,end=parseInt($('.sp-ov-end')?.value)||0;return data.split('\n').map(l=>l.slice(0,start)+s+l.slice(end)).join('\n'); }
-      case 'rotate': { const n=parseInt($('.sp-rot-n')?.value)||3;return data.split('\n').map(l=>{const len=l.length;if(!len)return l;const offset=((n%len)+len)%len;return l.slice(len-offset)+l.slice(0,len-offset);}).join('\n'); }
-      case 'reverse-delimited': { const s=$('.sp-rd-sep')?.value||'.';return data.split('\n').map(l=>l.split(s).reverse().join(s)).join('\n'); }
-      case 'chomp': return data.replace(/\r?\n?$/,'');
-      case 'chop': return data.split('\n').map(l=>l.slice(0,-1)).join('\n');
-      case 'left': { const n=parseInt($('.sp-left-n')?.value)||3;return data.split('\n').map(l=>l.slice(0,n)).join('\n'); }
-      case 'right': { const n=parseInt($('.sp-right-n')?.value)||3;return data.split('\n').map(l=>l.slice(-n)).join('\n'); }
-      case 'mid': { const pos=parseInt($('.sp-mid-pos')?.value)||0,len=parseInt($('.sp-mid-len')?.value)||3;return data.split('\n').map(l=>l.slice(pos,pos+len)).join('\n'); }
-      case 'substring-before': { const s=$('.sp-sb-sep')?.value||'';if(!s)return data;return data.split('\n').map(l=>{const i=l.indexOf(s);return i>=0?l.slice(0,i):l;}).join('\n'); }
-      case 'substring-after': { const s=$('.sp-sa-sep')?.value||'';if(!s)return data;return data.split('\n').map(l=>{const i=l.indexOf(s);return i>=0?l.slice(i+s.length):l;}).join('\n'); }
-      case 'substring-between': { const o=$('.sp-sb-open')?.value||'',c=$('.sp-sb-close')?.value||'';if(!o||!c)return data;return data.split('\n').map(l=>{const s=l.indexOf(o);if(s<0)return '';const e=l.indexOf(c,s+o.length);return e>=0?l.slice(s+o.length,e):'';}).join('\n'); }
-      case 'unwrap': { const c=$('.sp-unwrap-c')?.value||'"';return data.split('\n').map(l=>{if(l.startsWith(c)&&l.endsWith(c)&&l.length>=2)return l.slice(c.length,-c.length);return l;}).join('\n'); }
-      case 'default-if-blank': { const d=$('.sp-dib-def')?.value||'';return data.split('\n').map(l=>l.trim()?l:d).join('\n'); }
-      case 'unqualify': { const s=$('.sp-unqual-sep')?.value||'.';return data.split('\n').map(l=>{const i=l.lastIndexOf(s);return i>=0?l.slice(i+s.length):l;}).join('\n'); }
-      case 'simple-match': { const p=$('.sp-sm-pat')?.value||'*';const re=new RegExp('^'+p.replace(/\*/g,'.*').replace(/\?/g,'.')+'$');return data.split('\n').filter(l=>re.test(l)).join('\n'); }
-      case 'contains-any': { const c=$('.sp-cany-chars')?.value||'';const set=new Set(c);return data.split('\n').filter(l=>l.split('').some(ch=>set.has(ch))).join('\n'); }
-      case 'contains-none': { const c=$('.sp-cnone-chars')?.value||'';const set=new Set(c);return data.split('\n').filter(l=>!l.split('').some(ch=>set.has(ch))).join('\n'); }
-      case 'contains-only': { const c=$('.sp-conly-chars')?.value||'';const set=new Set(c);return data.split('\n').filter(l=>l.split('').every(ch=>set.has(ch))).join('\n'); }
-      case 'is-alpha': return data.split('\n').filter(l=>/^[A-Za-z]+$/.test(l)).join('\n');
-      case 'is-numeric': return data.split('\n').filter(l=>/^\d+$/.test(l)).join('\n');
-      case 'is-alphanumeric': return data.split('\n').filter(l=>/^[A-Za-z0-9]+$/.test(l)).join('\n');
-      case 'is-all-lower': return data.split('\n').filter(l=>/^[a-z]+$/.test(l.trim())).join('\n');
-      case 'is-all-upper': return data.split('\n').filter(l=>/^[A-Z]+$/.test(l.trim())).join('\n');
-      case 'ordinal-index-of': { const sub=$('.sp-oi-sub')?.value||'',n=parseInt($('.sp-oi-n')?.value)||2;if(!sub)return data;return data.split('\n').map(l=>{let idx=-1;for(let i=0;i<n;i++){idx=l.indexOf(sub,idx+1);if(idx<0)break;}return `${l} | ${idx}`;}).join('\n'); }
-      /* ===== 更多语言/库 ===== */
-      case 'collapse-spaces': { const c=$('.sp-cs-replace')?.value||' ';return data.split('\n').map(l=>l.replace(/\s+/g,c)).join('\n'); }
-      case 'split-lines': return data.replace(/\r\n/g,'\n').split('\n').join('\n');
-      case 'translate': { const f=$('.sp-tr-from')?.value||'',t=$('.sp-tr-to')?.value||'';if(!f)return data;const map={};for(let i=0;i<f.length;i++)map[f[i]]=t[i]||'';return data.split('\n').map(l=>l.split('').map(c=>map[c]!==undefined?map[c]:c).join('')).join('\n'); }
-      case 'remove-chars': { const c=$('.sp-rc-chars')?.value||'';const re=new RegExp(`[${StringPipelineUtils.escapeRegex(c)}]`,'g');return data.split('\n').map(l=>l.replace(re,'')).join('\n'); }
-      case 'retain-chars': { const c=$('.sp-rt-chars')?.value||'';const set=new Set(c);return data.split('\n').map(l=>l.split('').filter(ch=>set.has(ch)).join('')).join('\n'); }
-      case 'common-prefix': { const lines=data.split('\n').filter(l=>l.trim());if(!lines.length)return '';let p=lines[0];for(let i=1;i<lines.length;i++){while(lines[i].indexOf(p)!==0)p=p.slice(0,-1);}return p; }
-      case 'common-suffix': { const lines=data.split('\n').filter(l=>l.trim());if(!lines.length)return '';let s=lines[0];for(let i=1;i<lines.length;i++){while(lines[i].indexOf(s)!==lines[i].length-s.length&&s.length>0)s=s.slice(1);}return s; }
-      case 'insert': { const pos=parseInt($('.sp-ins-pos')?.value)||0,t=$('.sp-ins-text')?.value||'';return data.split('\n').map(l=>l.slice(0,pos)+t+l.slice(pos)).join('\n'); }
-      case 'replace-by-pos': { const pos=parseInt($('.sp-rbp-pos')?.value)||0,len=parseInt($('.sp-rbp-len')?.value)||1,t=$('.sp-rbp-text')?.value||'';return data.split('\n').map(l=>l.slice(0,pos)+t+l.slice(pos+len)).join('\n'); }
-      case 'start-case': return data.split('\n').map(l=>l.replace(/\b\w/g,c=>c.toUpperCase())).join('\n');
-      case 'words': return data.split('\n').flatMap(l=>l.trim()?l.split(/\s+/):[]).join('\n');
-      case 'escape-regex': return data.split('\n').map(l=>l.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('\n');
-      case 'strip-tags': { const allow=$('.sp-strip-tags')?.value||'';if(allow){const tags=allow.split(',').map(t=>t.trim()).filter(Boolean);const re=new RegExp(`<\/?(${tags.join('|')})(\\s[^>]*)?>|<[^>]*>`,'gi');return data.replace(re,'');}return data.replace(/<[^>]*>/g,''); }
-      case 'is-title-case': return data.split('\n').filter(l=>/^[A-Z]/.test(l)&&l===l.replace(/\b\w/g,c=>c.toUpperCase())).join('\n');
-      case 'length': return data.split('\n').map(l=>`${l.length} | ${l}`).join('\n');
-      case 'word-count': return data.split('\n').map(l=>{const c=l.trim()?l.split(/\s+/).length:0;return `${c} | ${l}`;}).join('\n');
-      case 'format': { const fmt=$('.sp-fmt-tpl')?.value||'{0}';return data.split('\n').map((l,i)=>{const parts=l.split(/\s+/);return fmt.replace(/\{(\d+)\}/g,(_,n)=>parts[parseInt(n)]||'');}).join('\n'); }
-      case 'substr': { const s=parseInt($('.sp-substr-start')?.value)||0,len=parseInt($('.sp-substr-len')?.value)||0;return data.split('\n').map(l=>len>0?l.substr(s,len):l.substr(s)).join('\n'); }
-      /* ===== 扩展操作 ===== */
-      case 'lookup': { const mapStr=$('.sp-lookup-map')?.value||'';if(!mapStr.trim())return data;const map={};mapStr.split('\n').filter(l=>l.trim()).forEach(l=>{const i=l.indexOf('=');if(i>0){map[l.slice(0,i).trim()]=l.slice(i+1).trim();}});return data.split('\n').map(l=>map[l]!==undefined?map[l]:l).join('\n'); }
-      case 'comm': { const listB=$('.sp-comm-list')?.value||'',mode=$('.sp-comm-mode')?.value||'all';const linesA=data.split('\n').filter(l=>l.trim());const linesB=listB.split('\n').filter(l=>l.trim());const setB=new Set(linesB);const setA=new Set(linesA);const aOnly=linesA.filter(l=>!setB.has(l));const bOnly=linesB.filter(l=>!setA.has(l));const both=linesA.filter(l=>setB.has(l));if(mode==='a-only')return aOnly.join('\n');if(mode==='b-only')return bOnly.join('\n');if(mode==='both')return both.join('\n');return `# A独有 (${aOnly.length})\n${aOnly.join('\n')}\n\n# B独有 (${bOnly.length})\n${bOnly.join('\n')}\n\n# 共有 (${both.length})\n${both.join('\n')}`; }
-      case 'fold': { const w=parseInt($('.sp-fold-width')?.value)||20;return data.split('\n').flatMap(l=>{const r=[];for(let i=0;i<l.length;i+=w)r.push(l.slice(i,i+w));return r;}).join('\n'); }
+      case 'zip': { const zipData=this.getRefOrTextarea(step,'.sp-zip-data','.sp-zip-ref');const sep=$('.sp-zip-sep')?.value||' ';const listB=zipData.split('\n').filter(l=>l.trim());const listA=data.split('\n').filter(l=>l.trim());const len=Math.min(listA.length,listB.length);return Array.from({length:len},(_,i)=>listA[i]+sep+listB[i]).join('\n'); }
+      case 'lookup': { const mapStr=this.getRefOrTextarea(step,'.sp-lookup-map','.sp-lookup-ref');if(!mapStr.trim())return data;const map={};mapStr.split('\n').filter(l=>l.trim()).forEach(l=>{const i=l.indexOf('=');if(i>0){map[l.slice(0,i).trim()]=l.slice(i+1).trim();}});return data.split('\n').map(l=>map[l]!==undefined?map[l]:l).join('\n'); }
+      case 'comm': { const listB=this.getRefOrTextarea(step,'.sp-comm-list','.sp-comm-ref');const mode=$('.sp-comm-mode')?.value||'all';const linesA=data.split('\n').filter(l=>l.trim());const linesB=listB.split('\n').filter(l=>l.trim());const setB=new Set(linesB);const setA=new Set(linesA);const aOnly=linesA.filter(l=>!setB.has(l));const bOnly=linesB.filter(l=>!setA.has(l));const both=linesA.filter(l=>setB.has(l));if(mode==='a-only')return aOnly.join('\n');if(mode==='b-only')return bOnly.join('\n');if(mode==='both')return both.join('\n');return `# A独有 (${aOnly.length})\n${aOnly.join('\n')}\n\n# B独有 (${bOnly.length})\n${bOnly.join('\n')}\n\n# 共有 (${both.length})\n${both.join('\n')}`; }
+      case 'fold': { const w=parseInt($('.sp-fold-width')?.value)||20;const lines=data.split('\n');return lines.flatMap(l=>l.match(new RegExp('.{1,'+w+'}','g'))||['']).join('\n'); }
       case 'unexpand': { const n=parseInt($('.sp-unexpand-size')?.value)||4;return data.split('\n').map(l=>l.replace(new RegExp(`^ {${n}}`,'gm'),'\t')).join('\n'); }
       case 'accumulate': { const mode=$('.sp-accum-mode')?.value||'sum',sep=$('.sp-accum-sep')?.value||' ';const lines=data.split('\n');const r=[];let acc=0,parts=[];for(let i=0;i<lines.length;i++){const l=lines[i];if(mode==='sum'){acc+=parseFloat(l)||0;r.push(String(acc));}else if(mode==='count'){r.push(String(i+1));}else{parts.push(l);r.push(parts.join(sep));}}return r.join('\n'); }
       case 'regex-test': { const pat=$('.sp-rt-pat')?.value||'',mode=$('.sp-rt-mode')?.value||'bool';if(!pat)return data;const re=new RegExp(pat,'g');return data.split('\n').map(l=>{const m=l.match(re);return mode==='bool'?`${re.test(l)} | ${l}`:`${(m||[]).length} | ${l}`;}).join('\n'); }
