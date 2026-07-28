@@ -883,16 +883,25 @@ eq('dedupe 无重复', dedupe('a\nb\nc'), 'a\nb\nc');
 
 console.log('扩展操作全部通过');
 
-console.log('\n=== 💾 暂存列表/多列表交互 ===\n');
+console.log('\n=== 💾 自动暂存/多列表交互 ===\n');
+// 自动暂存模拟: 执行管道后每步结果自动保存
+const autoSaved = {};
+const autoSave = (steps, outputs) => {
+  for (const item of outputs) autoSaved[item.step] = item.data;
+};
+autoSave(['步骤1', '步骤2'], [{step:'原始输入',data:'a\nb'},{step:'大小写转换',data:'A\nB'},{step:'排序',data:'A\nB'}]);
+eq('自动暂存 原始输入', autoSaved['原始输入'], 'a\nb');
+eq('自动暂存 步骤结果', autoSaved['大小写转换'], 'A\nB');
+
 // save/load 暂存
 const savedLists = {};
 const saveList = (name, data) => { savedLists[name.trim()] = data; };
 const loadList = (name) => savedLists[name] || null;
 saveList('fruits', 'apple\nbanana\ncherry');
 saveList('numbers', '1\n2\n3');
-eq('save 保存成功', loadList('fruits'), 'apple\nbanana\ncherry');
-eq('load 加载正确', loadList('numbers'), '1\n2\n3');
-eq('load 不存在的返回null', loadList('nonexist'), null);
+eq('暂存成功', loadList('fruits'), 'apple\nbanana\ncherry');
+eq('加载正确', loadList('numbers'), '1\n2\n3');
+eq('加载不存在返回null', loadList('nonexist'), null);
 
 // comm 引用暂存列表
 const commWithRef = (dataA, refName, mode) => {

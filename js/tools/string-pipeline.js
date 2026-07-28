@@ -185,7 +185,6 @@ const StringPipeline = {
               </optgroup>
               <optgroup label="👁️ 调试">
                 <option value="peek">Peek 窥视</option>
-                <option value="save">💾 保存为 (save) 暂存中间值</option>
                 <option value="load">📂 加载列表 (load)</option>
               </optgroup>
               <optgroup label="🏛️ Commons/Spring StringUtils">
@@ -350,7 +349,7 @@ const StringPipeline = {
     const names = this.getListNames();
     count.textContent = String(names.length);
     if (names.length === 0) {
-      body.innerHTML = '<div class="empty-state">使用管道中的"💾 保存为"步骤暂存中间结果</div>';
+      body.innerHTML = '<div class="empty-state">执行管道后，每一步的中间结果会自动暂存到这里</div>';
       return;
     }
     let html = '';
@@ -363,6 +362,7 @@ const StringPipeline = {
           <span class="sp-saved-name" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">📁 ${name}</span>
           <span class="text-muted" style="font-size:11px">${lines.length} 行, ${data.length} 字符</span>
           <button class="btn btn-xs" onclick="StringPipeline.copySaved('${name}')">📋</button>
+          <button class="btn btn-xs" onclick="StringPipeline.exportSaved('${name}')">💾</button>
           <button class="btn btn-xs btn-danger" onclick="StringPipeline.deleteSaved('${name}')">✕</button>
         </div>
         <pre class="code-block light" style="display:none;max-height:100px;overflow:auto;font-size:11px;margin-top:4px">${StringPipelineUtils.escapeHtml(preview)}</pre>
@@ -374,6 +374,15 @@ const StringPipeline = {
     const data = this.savedLists[name];
     if (!data) return;
     navigator.clipboard.writeText(data).then(() => this.showToast(`已复制: ${name}`));
+  },
+  exportSaved(name) {
+    const data = this.savedLists[name];
+    if (!data) return;
+    const blob = new Blob([data], {type:'text/plain;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = name.replace(/[/\\?%*:|"<>]/g,'_') + '.txt'; a.click();
+    URL.revokeObjectURL(url);
+    this.showToast(`已导出: ${name}.txt`);
   },
   populateSavedRefs() {
     const names = this.getListNames();
@@ -548,7 +557,6 @@ const StringPipeline = {
       sample: `<input class="sp-sample-n" type="number" value="5" min="1" style="width:70px"><span class="hint">随机抽取 N 行</span>`,
       pick: `<input class="sp-pick-range" placeholder="范围" value="1-5" style="width:100px"><span class="hint">如 1-5, 或 1,3,5</span>`,
       peek: `<span class="hint">👁️ 窥视: 执行到此步时将中间数据显示在日志中</span>`,
-      save: `<input class="sp-save-name" placeholder="保存名称(如 list_a)" style="width:140px"><span class="hint">将当前数据暂存，后续可用"加载列表"引用</span>`,
       load: `<select class="sp-load-name"></select><span class="hint">加载之前保存的列表数据到当前管道</span>`,
       groupby: `<select class="sp-groupby-mode">
         <option value="firstChar">首字母分组</option><option value="length">按长度分组</option>
@@ -726,7 +734,7 @@ const StringPipeline = {
       'drop-while':'DropWhile', repeat:'🔁 重复',
       limit:'✂️ Limit', last:'取后N行', skip:'⏭️ Skip',
       sample:'🎲 随机抽样', pick:'🔢 选取行',
-      peek:'👁️ Peek', save:'💾 保存为', load:'📂 加载列表', groupby:'📊 GroupBy', reduce:'📦 Reduce',
+      peek:'👁️ Peek', load:'📂 加载列表', groupby:'📊 GroupBy', reduce:'📦 Reduce',
       substring:'✂️ 截取子串', pad:'📏 填充', 'pad-zeros':'零填充',
       center:'居中对齐', truncate:'✂️ 截断',
       'truncate-words':'按单词截断', template:'📝 模板映射',
@@ -837,7 +845,6 @@ const StringPipeline = {
   execute() {
     const raw = document.getElementById('sp-input').value;
     if (!raw.trim()) { this.showToast('请先输入数据'); return; }
-    // 自动解析：如果还没有解析或源文本变了，自动解析
     const input = this.parsedSource || raw;
     this.peekLogs = [];
     let data = input;
@@ -852,6 +859,13 @@ const StringPipeline = {
     const lines = data.split('\n');
     document.getElementById('sp-output-status').textContent = `${lines.length} 行, ${data.length} 字符`;
     this.renderIntermediate(allOutputs, error);
+    // 自动暂存所有中间结果到 savedLists
+    for (const item of allOutputs) {
+      // 用 "原始输入" / "步骤N-xxx" 作为key
+      const key = item.step;
+      this.savedLists[key] = item.data;
+    }
+    this.renderSavedLists();
   },
 
   processStep(step, data) {
@@ -896,7 +910,6 @@ const StringPipeline = {
       case 'sample': { const n=parseInt($('.sp-sample-n')?.value)||5;const arr=data.split('\n').filter(l=>l.trim());const s=[];const len=Math.min(n,arr.length);const idx=new Set();while(idx.size<len)idx.add(Math.floor(Math.random()*arr.length));return arr.filter((_,i)=>idx.has(i)).join('\n'); }
       case 'pick': { const r=$('.sp-pick-range')?.value||'1-5';const idx=StringPipelineUtils.parseColumns(r);const lines=data.split('\n');return idx.map(i=>lines[i-1]||'').filter(l=>l!==undefined).join('\n'); }
       case 'peek': { const lines=data.split('\n');const pv=lines.length>15?lines.slice(0,15).join('\n')+`\n... (共 ${lines.length} 行)`:data;this.peekLogs.push(`👁️ Peek (${lines.length}行, ${data.length}字符):\n${pv}`);return data; }
-      case 'save': { const name=$('.sp-save-name')?.value||'';if(name)this.saveList(name,data);return data; }
       case 'load': { const name=$('.sp-load-name')?.value||'';const d=this.loadList(name);return d!==null?d:data; }
       case 'groupby': { const m=$('.sp-groupby-mode')?.value||'firstChar';const lines=data.split('\n').filter(l=>l.trim());const g={};for(const l of lines){let k;switch(m){case'firstChar':k=(l[0]||'').toUpperCase()||'(empty)';break;case'length':k=`len=${l.length}`;break;case'exact':k=l;break;default:k=l;}if(!g[k])g[k]=[];g[k].push(l);}return Object.entries(g).map(([k,items])=>`# ${k} (${items.length} 项)\n${items.join('\n')}`).join('\n\n'); }
       case 'reduce': { const op=$('.sp-reduce-op')?.value||'join',sep=$('.sp-reduce-sep')?.value||', ';const lines=data.split('\n').filter(l=>l.trim());const nums=lines.map(v=>parseFloat(v)).filter(v=>!isNaN(v));switch(op){case'join':return lines.join(sep);case'count':return `Count: ${lines.length}`;case'sum':return `Sum: ${nums.reduce((a,b)=>a+b,0)}`;case'min':return `Min: ${nums.length>0?Math.min(...nums):'N/A'}`;case'max':return `Max: ${nums.length>0?Math.max(...nums):'N/A'}`;default:return data;} }
