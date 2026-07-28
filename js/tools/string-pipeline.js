@@ -82,13 +82,20 @@ const StringPipeline = {
                 <option value="template">模板映射</option>
                 <option value="trim">去除两端空格</option>
                 <option value="normalize-space">规范化空白</option>
+                <option value="collapse-spaces">collapseSpaces 合并连续空格</option>
                 <option value="expandtabs">展开制表符</option>
                 <option value="squeeze">去除连续重复字符</option>
+                <option value="translate">translate/tr 字符映射替换</option>
+                <option value="remove-chars">removeChars 删除指定字符</option>
+                <option value="retain-chars">retainChars 只保留指定字符</option>
                 <option value="reverse-str">反转每行内容</option>
                 <option value="reverse-words">反转单词顺序</option>
                 <option value="shuffle-chars">打乱每行字符</option>
                 <option value="repeat">重复行</option>
                 <option value="substring">截取子串</option>
+                <option value="substr">substr 起始+长度</option>
+                <option value="insert">insert 在指定位置插入</option>
+                <option value="replace-by-pos">replaceByPos 替换指定位置</option>
                 <option value="truncate">截断到指定长度</option>
                 <option value="truncate-words">按单词截断</option>
                 <option value="pad">填充到指定长度</option>
@@ -101,6 +108,9 @@ const StringPipeline = {
                 <option value="slugify">URL友好化</option>
                 <option value="to-ascii">去除重音</option>
                 <option value="replace-line-endings">换行符规范化</option>
+                <option value="escape-regex">escapeRegExp 转义正则字符</option>
+                <option value="strip-tags">strip_tags 去除HTML标签</option>
+                <option value="format">format 格式化占位符</option>
               </optgroup>
               <optgroup label="🎁 包裹/前缀/后缀">
                 <option value="wrap">包裹 (前缀+后缀)</option>
@@ -126,11 +136,14 @@ const StringPipeline = {
                 <option value="reverse-lines">反转行顺序</option>
                 <option value="line-number">添加行号</option>
                 <option value="extract">正则提取</option>
+                <option value="words">words 拆分为单词</option>
+                <option value="is-title-case">isTitleCase 标题大小写</option>
               </optgroup>
               <optgroup label="📦 聚合/展开/分批">
                 <option value="join">行连接为一行</option>
                 <option value="flatten">全部合并为一行</option>
                 <option value="split">按分隔符拆分为多行</option>
+                <option value="split-lines">splitlines 智能拆分</option>
                 <option value="reduce">Reduce 归约</option>
                 <option value="groupby">GroupBy 分组</option>
                 <option value="batch">分批 (每N行一组)</option>
@@ -141,8 +154,12 @@ const StringPipeline = {
               </optgroup>
               <optgroup label="📊 统计/频率">
                 <option value="count-occ">统计子串出现次数</option>
+                <option value="length">length 每行长度</option>
+                <option value="word-count">wordCount 每行单词数</option>
                 <option value="frequency">频率统计</option>
                 <option value="top">按频率取前N</option>
+                <option value="common-prefix">commonPrefix 公共前缀</option>
+                <option value="common-suffix">commonSuffix 公共后缀</option>
               </optgroup>
               <optgroup label="🔐 编码/解码/哈希">
                 <option value="base64-encode">Base64 编码</option>
@@ -529,7 +546,31 @@ const StringPipeline = {
       'ordinal-index-of': `<input class="sp-oi-sub" placeholder="子串" style="width:80px">
         <input class="sp-oi-n" type="number" placeholder="第N次" value="2" min="1" style="width:60px">
         <span class="hint">StringUtils.ordinalIndexOf — 第N次出现的位置，输出: "行内容 | N"</span>`,
-    };
+      /* ===== 更多语言/库 ===== */
+      'collapse-spaces': `<input class="sp-cs-replace" placeholder="替换为" value=" " style="width:60px"><span class="hint">Guava collapseFrom — 合并连续空白为指定字符</span>`,
+      'split-lines': `<span class="hint">Python splitlines — 按换行符拆分(保留空行)</span>`,
+      translate: `<input class="sp-tr-from" placeholder="原字符" style="width:80px"><input class="sp-tr-to" placeholder="目标字符" style="width:80px"><span class="hint">Python str.translate / Ruby tr — 逐字符映射</span>`,
+      'remove-chars': `<input class="sp-rc-chars" placeholder="要删除的字符" style="width:120px"><span class="hint">Guava removeFrom — 删除行中所有指定字符</span>`,
+      'retain-chars': `<input class="sp-rt-chars" placeholder="要保留的字符" style="width:120px"><span class="hint">Guava retainFrom — 只保留行中这些字符</span>`,
+      'common-prefix': `<span class="hint">Guava commonPrefix — 所有行的公共前缀(输出1行)</span>`,
+      'common-suffix': `<span class="hint">Guava commonSuffix — 所有行的公共后缀(输出1行)</span>`,
+      insert: `<input class="sp-ins-pos" type="number" placeholder="位置" value="0" style="width:60px"><input class="sp-ins-text" placeholder="插入文本" style="width:100px"><span class="hint">C# Insert — 在指定位置插入文本</span>`,
+      'replace-by-pos': `<input class="sp-rbp-pos" type="number" placeholder="起始" value="0" style="width:60px">
+        <input class="sp-rbp-len" type="number" placeholder="长度" value="1" style="width:60px">
+        <input class="sp-rbp-text" placeholder="替换文本" style="width:100px">
+        <span class="hint">SQL INSERT — 替换指定位置开始的N个字符</span>`,
+      'start-case': `<span class="hint">lodash startCase / PHP ucwords — 每个单词首字母大写</span>`,
+      words: `<span class="hint">lodash words — 将每行按单词拆分，每词一行</span>`,
+      'escape-regex': `<span class="hint">lodash escapeRegExp — 转义字符串中的正则特殊字符</span>`,
+      'strip-tags': `<input class="sp-strip-tags" placeholder="允许的标签(可选)" style="width:120px"><span class="hint">PHP strip_tags — 去除HTML/XML标签</span>`,
+      'is-title-case': `<span class="hint">Python istitle — 仅保留标题大小写行(每个单词首字母大写)</span>`,
+      length: `<span class="hint">输出每行的字符长度: "行内容 | 长度"</span>`,
+      'word-count': `<span class="hint">输出每行的单词数: "行内容 | 单词数"</span>`,
+      format: `<input class="sp-fmt-tpl" placeholder='如: {0} → {1}' style="width:200px"><span class="hint">Python Format / C# Format — 按位置{0}{1}格式化</span>`,
+      substr: `<input class="sp-substr-start" type="number" placeholder="起始" value="0" style="width:60px">
+        <input class="sp-substr-len" type="number" placeholder="长度(0=到末尾)" value="0" style="width:60px">
+        <span class="hint">PHP substr — 从起始位置取N个字符</span>`,
+    }; // ← end of cfg
     return cfg[type] || '';
   },
 
@@ -595,7 +636,17 @@ const StringPipeline = {
       'is-alpha':'isAlpha 仅字母', 'is-numeric':'isNumeric 仅数字',
       'is-alphanumeric':'isAlphanumeric 仅字母数字',
       'is-all-lower':'isAllLowerCase 全小写', 'is-all-upper':'isAllUpperCase 全大写',
-      'ordinal-index-of':'ordinalIndexOf 第N次位置'
+      'ordinal-index-of':'ordinalIndexOf 第N次位置',
+      /* 更多语言/库 */
+      'collapse-spaces':'collapseSpaces 合并空白', 'split-lines':'splitlines 智能拆分',
+      translate:'translate/tr 字符映射', 'remove-chars':'removeChars 删除字符',
+      'retain-chars':'retainChars 保留字符', 'common-prefix':'commonPrefix 公共前缀',
+      'common-suffix':'commonSuffix 公共后缀', insert:'insert 插入',
+      'replace-by-pos':'replaceByPos 替换位置', 'start-case':'startCase 单词首字母大写',
+      words:'words 拆分为单词', 'escape-regex':'escapeRegExp 转义正则',
+      'strip-tags':'strip_tags 去HTML标签', 'is-title-case':'isTitleCase 标题大小写',
+      length:'length 每行长度', 'word-count':'wordCount 每行单词数',
+      format:'format 格式化', substr:'substr 起始+长度'
     };
     return m[type] || type;
   },
@@ -780,6 +831,25 @@ const StringPipeline = {
       case 'is-all-lower': return data.split('\n').filter(l=>l===l.toLowerCase()&&/[a-z]/.test(l)).join('\n');
       case 'is-all-upper': return data.split('\n').filter(l=>l===l.toUpperCase()&&/[A-Z]/.test(l)).join('\n');
       case 'ordinal-index-of': { const sub=$('.sp-oi-sub')?.value||'',n=parseInt($('.sp-oi-n')?.value)||2;if(!sub)return data;return data.split('\n').map(l=>{let idx=-1;for(let i=0;i<n;i++){idx=l.indexOf(sub,idx+1);if(idx<0)break;}return `${l} | ${idx}`;}).join('\n'); }
+      /* ===== 更多语言/库 ===== */
+      case 'collapse-spaces': { const c=$('.sp-cs-replace')?.value||' ';return data.split('\n').map(l=>l.replace(/\s+/g,c)).join('\n'); }
+      case 'split-lines': return data.split('\n').flatMap(l=>l.split(/\r?\n/)).join('\n');
+      case 'translate': { const f=$('.sp-tr-from')?.value||'',t=$('.sp-tr-to')?.value||'';if(!f)return data;const map={};for(let i=0;i<f.length;i++)map[f[i]]=t[i]||'';return data.split('\n').map(l=>l.split('').map(c=>map[c]!==undefined?map[c]:c).join('')).join('\n'); }
+      case 'remove-chars': { const c=$('.sp-rc-chars')?.value||'';const re=new RegExp(`[${StringPipelineUtils.escapeRegex(c)}]`,'g');return data.split('\n').map(l=>l.replace(re,'')).join('\n'); }
+      case 'retain-chars': { const c=$('.sp-rt-chars')?.value||'';const set=new Set(c);return data.split('\n').map(l=>l.split('').filter(ch=>set.has(ch)).join('')).join('\n'); }
+      case 'common-prefix': { const lines=data.split('\n').filter(l=>l.trim());if(!lines.length)return '';let p=lines[0];for(let i=1;i<lines.length;i++){while(lines[i].indexOf(p)!==0)p=p.slice(0,-1);}return p; }
+      case 'common-suffix': { const lines=data.split('\n').filter(l=>l.trim());if(!lines.length)return '';let s=lines[0];for(let i=1;i<lines.length;i++){while(lines[i].indexOf(s)!==lines[i].length-s.length&&s.length>0)s=s.slice(1);}return s; }
+      case 'insert': { const pos=parseInt($('.sp-ins-pos')?.value)||0,t=$('.sp-ins-text')?.value||'';return data.split('\n').map(l=>l.slice(0,pos)+t+l.slice(pos)).join('\n'); }
+      case 'replace-by-pos': { const pos=parseInt($('.sp-rbp-pos')?.value)||0,len=parseInt($('.sp-rbp-len')?.value)||1,t=$('.sp-rbp-text')?.value||'';return data.split('\n').map(l=>l.slice(0,pos)+t+l.slice(pos+len)).join('\n'); }
+      case 'start-case': return data.split('\n').map(l=>l.replace(/\b\w/g,c=>c.toUpperCase())).join('\n');
+      case 'words': return data.split('\n').flatMap(l=>l.trim()?l.split(/\s+/):[]).join('\n');
+      case 'escape-regex': return data.split('\n').map(l=>l.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('\n');
+      case 'strip-tags': { const allow=$('.sp-strip-tags')?.value||'';if(allow){const tags=allow.split(',').map(t=>t.trim()).filter(Boolean);const re=new RegExp(`<\/?(${tags.join('|')})(\\s[^>]*)?>|<[^>]*>`,'gi');return data.replace(re,'');}return data.replace(/<[^>]*>/g,''); }
+      case 'is-title-case': return data.split('\n').filter(l=>/^[A-Z]/.test(l)&&l===l.replace(/\b\w/g,c=>c.toUpperCase())).join('\n');
+      case 'length': return data.split('\n').map(l=>`${l.length} | ${l}`).join('\n');
+      case 'word-count': return data.split('\n').map(l=>{const c=l.trim()?l.split(/\s+/).length:0;return `${c} | ${l}`;}).join('\n');
+      case 'format': { const fmt=$('.sp-fmt-tpl')?.value||'{0}';return data.split('\n').map((l,i)=>{const parts=l.split(/\s+/);return fmt.replace(/\{(\d+)\}/g,(_,n)=>parts[parseInt(n)]||'');}).join('\n'); }
+      case 'substr': { const s=parseInt($('.sp-substr-start')?.value)||0,len=parseInt($('.sp-substr-len')?.value)||0;return data.split('\n').map(l=>len>0?l.substr(s,len):l.substr(s)).join('\n'); }
       default: return data;
     }
   },
