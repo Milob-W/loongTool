@@ -53,6 +53,10 @@ const StringPipeline = {
           </div>
           <textarea id="sp-input" class="large" placeholder="输入要处理的文本..."></textarea>
           <div class="status-bar" id="sp-input-status">0 行</div>
+          <div class="card" style="margin-top:0.5rem;display:none" id="sp-input-preview-card">
+            <div class="card-header" style="font-size:0.75rem;padding:0.25rem 0.5rem">📖 输入预览 (前5行)</div>
+            <div class="card-body" style="padding:0.25rem 0.5rem"><pre class="code-block light" style="max-height:80px;overflow:auto;font-size:11px" id="sp-input-preview"></pre></div>
+          </div>
           <div class="btn-group mt-2">
             <button class="btn btn-sm btn-primary" onclick="StringPipeline.parseSource()">🔄 解析数据源</button>
             <button class="btn btn-sm" onclick="StringPipeline.clearInput()">❌ 清空</button>
@@ -76,7 +80,9 @@ const StringPipeline = {
         <div class="card-body" id="sp-steps-container">
           <div class="empty-state" id="sp-empty-hint">点击下方按钮添加处理步骤，从上到下依次执行</div>
         </div>
-        <div class="card-body" style="border-top:1px solid var(--border)">
+        <div class="card-body" style="border-top:1px solid var(--border);padding-bottom:0.25rem">
+          <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">
+            <span style="font-size:0.75rem;color:var(--text-muted);display:none" id="sp-filter-info"><input type="text" id="sp-step-filter" placeholder="🔍 搜索步骤..." style="width:160px;font-size:0.8125rem;padding:2px 6px;border:1px solid var(--border);border-radius:var(--radius-sm)" oninput="StringPipeline.renderSteps()" onkeydown="if(event.key==='Escape')this.value='';StringPipeline.renderSteps()"></span>
           <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">
             <select id="sp-add-step-type" style="min-width:240px;font-size:0.8125rem">
               <optgroup label="🔤 大小写转换">
@@ -259,6 +265,33 @@ const StringPipeline = {
         </div>
       </div>
 
+      <div class="card" id="sp-regex-card" style="display:none">
+        <div class="card-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'" style="cursor:pointer">
+          <span>🔬 正则速查</span>
+          <span class="text-muted" style="font-size:0.75rem">点击展开/收起</span>
+        </div>
+        <div class="card-body" style="display:none;font-size:0.8125rem">
+          <table style="width:100%;border-collapse:collapse;font-size:0.75rem">
+            <tr><td style="padding:2px 6px;border:1px solid var(--border);font-family:monospace">.</td><td style="padding:2px 6px;border:1px solid var(--border)">任意单个字符</td>
+              <td style="padding:2px 6px;border:1px solid var(--border);font-family:monospace">\\d</td><td style="padding:2px 6px;border:1px solid var(--border)">数字 [0-9]</td></tr>
+            <tr><td style="padding:2px 6px;border:1px solid var(--border);font-family:monospace">\\w</td><td style="padding:2px 6px;border:1px solid var(--border)">单词字符 [a-zA-Z0-9_]</td>
+              <td style="padding:2px 6px;border:1px solid var(--border);font-family:monospace">\\s</td><td style="padding:2px 6px;border:1px solid var(--border)">空白字符</td></tr>
+            <tr><td style="padding:2px 6px;border:1px solid var(--border);font-family:monospace">*</td><td style="padding:2px 6px;border:1px solid var(--border)">0次或多次</td>
+              <td style="padding:2px 6px;border:1px solid var(--border);font-family:monospace">+</td><td style="padding:2px 6px;border:1px solid var(--border)">1次或多次</td></tr>
+            <tr><td style="padding:2px 6px;border:1px solid var(--border);font-family:monospace">?</td><td style="padding:2px 6px;border:1px solid var(--border)">0次或1次</td>
+              <td style="padding:2px 6px;border:1px solid var(--border);font-family:monospace">{n,m}</td><td style="padding:2px 6px;border:1px solid var(--border)">n到m次</td></tr>
+            <tr><td style="padding:2px 6px;border:1px solid var(--border);font-family:monospace">^</td><td style="padding:2px 6px;border:1px solid var(--border)">行首</td>
+              <td style="padding:2px 6px;border:1px solid var(--border);font-family:monospace">$</td><td style="padding:2px 6px;border:1px solid var(--border)">行尾</td></tr>
+            <tr><td style="padding:2px 6px;border:1px solid var(--border);font-family:monospace">(abc)</td><td style="padding:2px 6px;border:1px solid var(--border)">捕获组</td>
+              <td style="padding:2px 6px;border:1px solid var(--border);font-family:monospace">(?:abc)</td><td style="padding:2px 6px;border:1px solid var(--border)">非捕获组</td></tr>
+            <tr><td style="padding:2px 6px;border:1px solid var(--border);font-family:monospace">[abc]</td><td style="padding:2px 6px;border:1px solid var(--border)">字符集</td>
+              <td style="padding:2px 6px;border:1px solid var(--border);font-family:monospace">[^abc]</td><td style="padding:2px 6px;border:1px solid var(--border)">排除字符集</td></tr>
+            <tr><td style="padding:2px 6px;border:1px solid var(--border);font-family:monospace">(?=abc)</td><td style="padding:2px 6px;border:1px solid var(--border)">前瞻</td>
+              <td style="padding:2px 6px;border:1px solid var(--border);font-family:monospace">(?!abc)</td><td style="padding:2px 6px;border:1px solid var(--border)">否定前瞻</td></tr>
+          </table>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-header">📊 输出结果</div>
         <div class="card-body">
@@ -291,8 +324,8 @@ const StringPipeline = {
     `;
 
     document.getElementById('sp-input').addEventListener('input', () => {
-      const lines = document.getElementById('sp-input').value.split('\n').length;
-      document.getElementById('sp-input-status').textContent = `${lines} 行`;
+      StringPipeline.updateInputStats();
+      StringPipeline.showInputPreview();
     });
     document.getElementById('sp-csv-delimiter').addEventListener('change', () => {
       const sel = document.getElementById('sp-csv-delimiter');
@@ -384,6 +417,27 @@ const StringPipeline = {
     document.getElementById('sp-input').value = '';
     document.getElementById('sp-input-status').textContent = '0 行';
     this.showToast('已清空');
+  },
+  updateInputStats() {
+    const val = document.getElementById('sp-input').value;
+    const lines = val.split('\n');
+    const chars = val.length;
+    const words = val.trim() ? val.trim().split(/\s+/).length : 0;
+    const total = lines.length;
+    const truncated = total > 5000;
+    document.getElementById('sp-input-status').textContent =
+      `${truncated ? '5000+' : total} 行, ${chars} 字符, ${words} 词` +
+      (truncated ? ' (前5000行)' : '');
+  },
+  showInputPreview() {
+    const val = document.getElementById('sp-input').value;
+    const card = document.getElementById('sp-input-preview-card');
+    const pre = document.getElementById('sp-input-preview');
+    if (!val.trim()) { card.style.display = 'none'; return; }
+    const lines = val.split('\n');
+    const previewLines = lines.slice(0, 5);
+    pre.textContent = previewLines.join('\n') + (lines.length > 5 ? '\n...' : '');
+    card.style.display = 'block';
   },
   /* ===== 暂存列表管理 ===== */
   getListNames() { return Object.keys(this.savedLists); },
@@ -889,13 +943,34 @@ const StringPipeline = {
 
   renderSteps() {
     const container = document.getElementById('sp-steps-container');
+    const filterInput = document.getElementById('sp-step-filter');
+    const filterInfo = document.getElementById('sp-filter-info');
+    const filterQ = filterInput?.value?.toLowerCase() || '';
+    // 超过20步显示搜索框
+    if (filterInfo) filterInfo.style.display = this.steps.length > 20 ? 'inline' : 'none';
     document.getElementById('sp-step-count').textContent = `${this.steps.length} 步`;
+    // 正则速查面板: 有正则相关步骤时显示
+    const hasRegexStep = this.steps.some(s => s.type === 'regex-replace' || s.type === 'regex-test' || s.type === 'extract');
+    const regexCard = document.getElementById('sp-regex-card');
+    if (regexCard) regexCard.style.display = hasRegexStep ? 'block' : 'none';
+
+    const filtered = filterQ ? this.steps.filter(s => {
+      const label = this.getStepLabel(s.type).toLowerCase();
+      return label.includes(filterQ);
+    }) : this.steps;
+
     if (this.steps.length === 0) {
       container.innerHTML = `<div class="empty-state">点击下方按钮添加处理步骤，从上到下依次执行</div>`;
       return;
     }
+    if (filterQ && filtered.length === 0) {
+      container.innerHTML = `<div class="empty-state">没有匹配"${filterQ}"的步骤</div>`;
+      return;
+    }
+    const displaySteps = filterQ ? filtered : this.steps;
     let html = '';
-    this.steps.forEach((step, idx) => {
+    displaySteps.forEach((step, idx) => {
+      const realIdx = this.steps.indexOf(step);
       const noteEl = document.querySelector(`.sp-step[data-id="${step.id}"] .sp-note-text`);
       const noteVal = noteEl?.value || '';
       html += `<div class="sp-step" data-id="${step.id}" draggable="true"
@@ -903,12 +978,12 @@ const StringPipeline = {
         ondragover="event.preventDefault()"
         ondrop="StringPipeline.onDrop(event, ${step.id})">
         <div class="sp-step-header">
-          <span class="sp-step-num" style="cursor:grab">⠿ ${idx+1}.</span>
+          <span class="sp-step-num" style="cursor:grab">⠿ ${realIdx+1}.</span>
           <span class="sp-step-label">${this.getStepLabel(step.type)}</span>
           ${step.type==='note'?`<span class="text-muted" style="font-size:11px">${this.escapeAttr(noteVal||'')}</span>`:''}
           <div class="sp-step-actions">
-            <button class="btn btn-xs" onclick="StringPipeline.moveStep(${step.id},-1)" ${idx===0?'disabled':''}>↑</button>
-            <button class="btn btn-xs" onclick="StringPipeline.moveStep(${step.id},1)" ${idx===this.steps.length-1?'disabled':''}>↓</button>
+            <button class="btn btn-xs" onclick="StringPipeline.moveStep(${step.id},-1)" ${realIdx===0?'disabled':''}>↑</button>
+            <button class="btn btn-xs" onclick="StringPipeline.moveStep(${step.id},1)" ${realIdx===this.steps.length-1?'disabled':''}>↓</button>
             <button class="btn btn-xs btn-danger" onclick="StringPipeline.removeStep(${step.id})">✕</button>
           </div>
         </div>
@@ -920,6 +995,7 @@ const StringPipeline = {
       </div>`;
     });
     container.innerHTML = html;
+    if (filterQ) container.insertAdjacentHTML('afterbegin', `<div class="text-xs text-muted" style="padding:0.25rem 0.5rem">过滤: "${filterQ}" — 匹配 ${displaySteps.length}/${this.steps.length} 步</div>`);
     this.populateSavedRefs();
   },
 
@@ -1068,8 +1144,10 @@ const StringPipeline = {
     let html = '';
     for (const item of allOutputs) {
       const lines = item.data.split('\n');
-      const preview = lines.length > 10 ? lines.slice(0,10).join('\n')+`\n... (共 ${lines.length} 行)` : item.data;
-      html += `<div class="sp-intermediate-item"><div class="sp-intermediate-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'"><span>▶ ${item.step}</span><span class="text-muted" style="font-size:11px">${lines.length} 行, ${item.data.length} 字符</span></div><pre class="code-block light" style="display:none;max-height:120px;overflow:auto;font-size:11px;margin-top:4px">${StringPipelineUtils.escapeHtml(preview)}</pre></div>`;
+      const MAX_PREVIEW = 200;
+      const isLarge = lines.length > MAX_PREVIEW;
+      const preview = isLarge ? lines.slice(0,MAX_PREVIEW).join('\n')+`\n\n⚠️ 数据过大, 仅显示前 ${MAX_PREVIEW}/${lines.length} 行, 实际处理了全部数据` : (lines.length > 10 ? lines.slice(0,10).join('\n')+`\n... (共 ${lines.length} 行)` : item.data);
+      html += `<div class="sp-intermediate-item"><div class="sp-intermediate-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'"><span>▶ ${item.step}</span><span class="text-muted" style="font-size:11px">${lines.length} 行, ${item.data.length} 字符${isLarge?' ⚠️':''}</span></div><pre class="code-block light" style="display:none;max-height:120px;overflow:auto;font-size:11px;margin-top:4px">${StringPipelineUtils.escapeHtml(preview)}</pre></div>`;
     }
     if (this.peekLogs.length > 0) {
       html += `<div class="sp-intermediate-item" style="border-left-color:var(--blue)"><div class="sp-intermediate-header" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'"><span>👁️ Peek 日志</span></div><pre class="code-block light" style="display:none;max-height:200px;overflow:auto;font-size:11px;margin-top:4px">${StringPipelineUtils.escapeHtml(this.peekLogs.join('\n---\n'))}</pre></div>`;
